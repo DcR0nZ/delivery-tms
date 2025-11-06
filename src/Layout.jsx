@@ -493,14 +493,19 @@ export default function Layout({ children, currentPageName }) {
         {/* Main Content */}
         <div className={`flex-1 flex flex-col ${mainMargin} h-full transition-all duration-300`}>
           {/* Mobile Header */}
-          <div className="bg-white pt-1 pr-1 pb-1 pl-1 md:hidden sm:pl-3 sm:pt-3 border-b flex-shrink-0">
+          <div className="bg-white px-4 py-3 md:hidden border-b flex-shrink-0 relative z-50">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="touch-manipulation active:bg-gray-100"
+                  aria-label="Open menu"
+                >
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
+              <SheetContent side="left" className="w-64 p-0 z-50">
                 <div className="flex flex-col h-full">
                   <div className="flex items-center flex-shrink-0 px-4 pt-5">
                     <Truck className="h-8 w-8 text-blue-600" />
