@@ -285,6 +285,7 @@ const ManagerNav = ({ collapsed }) => {
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // ADDED
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
 
@@ -340,6 +341,7 @@ export default function Layout({ children, currentPageName }) {
         }
       } catch (e) {
         console.error('Authentication error:', e);
+        setError(e); // ADDED
         if (!window.location.search.includes('code=') && !window.location.search.includes('state=')) {
           const nextUrl = window.location.href;
           base44.auth.redirectToLogin(nextUrl);
@@ -358,6 +360,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const renderNavLinks = () => {
+    if (!user) return null; // ADDED
     const needsCustomerId = user.appRole === 'customer' || user.appRole === 'manager' || !user.appRole;
     const isPending = !!(user && user.role !== 'admin' && needsCustomerId && !user.customerId);
 
@@ -384,18 +387,26 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
+  // Show loading spinner
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
 
-  if (!user) {
+  // Show error if authentication failed or user object is unexpectedly null after loading
+  if (error || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Authenticating...</p>
+        </div>
       </div>
     );
   }
@@ -405,11 +416,13 @@ export default function Layout({ children, currentPageName }) {
 
   if (isPending && currentPageName === 'AccessPending') {
     return (
-      <div className="min-h-screen w-full bg-gray-50 overflow-auto">
-        <main className="p-4 md:p-6 max-w-5xl mx-auto">
-          {children}
-        </main>
-      </div>
+      <OfflineProvider> {/* WRAPPED WITH OFFLINEPROVIDER */}
+        <div className="min-h-screen w-full bg-gray-50 overflow-auto">
+          <main className="p-6"> {/* MODIFIED */}
+            {children}
+          </main>
+        </div>
+      </OfflineProvider>
     );
   }
 
@@ -429,7 +442,6 @@ export default function Layout({ children, currentPageName }) {
   const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
   const mainMargin = sidebarCollapsed ? 'md:ml-16' : 'md:ml-64';
 
-  // Wrap ALL content with OfflineProvider to avoid hook errors
   return (
     <OfflineProvider>
       <style>{`
@@ -438,15 +450,9 @@ export default function Layout({ children, currentPageName }) {
           margin: 0;
           padding: 0;
         }
-        @media (max-width: 768px) {
-          html, body, #root {
-            height: auto;
-            min-height: 100vh;
-          }
-        }
       `}</style>
       
-      <div className="min-h-screen md:h-full w-full flex bg-gray-50">
+      <div className="h-screen w-screen flex bg-gray-50 overflow-hidden"> {/* MODIFIED */}
         {/* Desktop Sidebar */}
         <div className={`hidden md:flex flex-col ${sidebarWidth} border-r bg-white h-full fixed left-0 top-0 z-20 transition-all duration-300`}>
           <div className={`flex items-center flex-shrink-0 px-4 pt-5 pb-4 ${sidebarCollapsed ? 'justify-center' : ''}`}>
@@ -496,10 +502,10 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className={`flex-1 flex flex-col ${mainMargin} min-h-screen md:h-full transition-all duration-300`}>
+        {/* Main Content Wrapper - applies margin for desktop, contains mobile header & main */}
+        <div className={`flex-1 flex flex-col ${mainMargin} h-full transition-all duration-300`}>
           {/* Mobile Header */}
-          <div className="bg-white px-4 py-3 md:hidden border-b flex-shrink-0 sticky top-0 z-50">
+          <div className="md:hidden bg-white border-b px-4 py-3 flex items-center justify-between z-30"> {/* MODIFIED */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button 
@@ -511,7 +517,7 @@ export default function Layout({ children, currentPageName }) {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0 z-50">
+              <SheetContent side="left" className="w-64 p-0"> {/* MODIFIED (removed z-50 class) */}
                 <div className="flex flex-col h-full">
                   <div className="flex items-center flex-shrink-0 px-4 pt-5">
                     <Truck className="h-8 w-8 text-blue-600" />
@@ -542,9 +548,16 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               </SheetContent>
             </Sheet>
+
+            <div className="flex items-center gap-2"> {/* ADDED */}
+              <Truck className="h-6 w-6 text-blue-600" />
+              <span className="font-semibold text-lg">{getSidebarTitle()}</span>
+            </div>
+
+            <div className="w-10"></div> {/* ADDED */}
           </div>
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <main className="flex-1 overflow-y-auto p-6"> {/* MODIFIED */}
             {children}
           </main>
         </div>
