@@ -173,7 +173,7 @@ export default function EditJobDialog({ job, open, onOpenChange, onJobUpdated })
           const currentNotes = docketNotes.slice(0, numUnits);
 
           setDocketNumbers([...currentDockets, ...Array(Math.max(0, numUnits - currentDockets.length)).fill('')]);
-          setDocketNotes([...currentNotes, ...Array(Math.max(0, numUnits - currentNotes.length)).fill('')]);
+          setDocketNotes([...currentNotes, ...Array(Math.max(0, numNotes.length)).fill('')]);
         } else {
           setDocketNumbers([]);
           setDocketNotes([]);
@@ -267,11 +267,37 @@ export default function EditJobDialog({ job, open, onOpenChange, onJobUpdated })
     setAttachments(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
+  const handleInteractOutside = (e) => {
+    const target = e.target;
+    
+    // Prevent closing when clicking on Google Places autocomplete
+    if (target.closest('.pac-container') || 
+        target.classList.contains('pac-item') ||
+        target.classList.contains('pac-item-query') ||
+        target.closest('[data-autocomplete-wrapper]') ||
+        target.hasAttribute('data-autocomplete-input')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+  };
+
   const selectedDeliveryType = deliveryTypes.find(t => t.id === formData.deliveryTypeId);
   const isUnitsDelivery = selectedDeliveryType?.name?.toLowerCase().includes('unit');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation for location coordinates
+    if (!formData.deliveryLocation || !formData.deliveryLatitude || !formData.deliveryLongitude) {
+      toast({
+        title: "Missing Location Coordinates",
+        description: "Please select an address from the suggestions to ensure accurate GPS coordinates.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
       if (!formData.customerId || !formData.deliveryTypeId || !formData.pickupLocationId) {
@@ -365,18 +391,8 @@ export default function EditJobDialog({ job, open, onOpenChange, onJobUpdated })
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className="sm:max-w-[600px]"
-        onPointerDownOutside={(e) => {
-          const target = e.target;
-          if (target.closest('.pac-container')) {
-            e.preventDefault();
-          }
-        }}
-        onInteractOutside={(e) => {
-          const target = e.target;
-          if (target.closest('.pac-container')) {
-            e.preventDefault();
-          }
-        }}
+        onPointerDownOutside={handleInteractOutside}
+        onInteractOutside={handleInteractOutside}
       >
         <DialogHeader>
           <DialogTitle>Edit Job</DialogTitle>
@@ -464,9 +480,10 @@ export default function EditJobDialog({ job, open, onOpenChange, onJobUpdated })
                   Delivery Address <span className="text-red-500">*</span>
                 </label>
                 <AddressAutocomplete
+                  id="deliveryLocation"
                   value={formData.deliveryLocation}
                   onChange={handleAddressChange}
-                  placeholder="Start typing address... e.g., 123 Main St, Brisbane"
+                  placeholder="Start typing address..."
                   required
                 />
                 {formData.deliveryLatitude && formData.deliveryLongitude && (
