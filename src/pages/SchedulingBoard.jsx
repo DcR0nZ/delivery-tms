@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
@@ -357,255 +358,280 @@ export default function SchedulingBoard() {
   // MOBILE VIEW
   if (isMobile) {
     return (
-      <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
-        <div className="bg-white border-b px-4 py-4 flex-shrink-0 sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-bold text-gray-900">Scheduling Board</h1>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setNotificationOpen(true)}
-              className="h-8 w-8 p-0"
-            >
-              <div className="relative">
-                <Bell className="h-5 w-5" />
-                {unreadNotifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold text-white">
-                    {unreadNotifications.length}
-                  </span>
-                )}
-              </div>
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between gap-2">
-            <Button variant="ghost" size="icon" onClick={goToPreviousDay} className="h-9 w-9">
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-
-            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg flex-1 justify-center">
-              <Calendar className="h-4 w-4 text-gray-500" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="border-none bg-transparent text-sm font-medium focus:outline-none text-center"
-              />
+      <>
+        <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
+          <div className="bg-white border-b px-4 py-4 flex-shrink-0 sticky top-0 z-10 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h1 className="text-xl font-bold text-gray-900">Scheduling Board</h1>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setNotificationOpen(true)}
+                className="h-8 w-8 p-0"
+              >
+                <div className="relative">
+                  <Bell className="h-5 w-5" />
+                  {unreadNotifications.length > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold text-white">
+                      {unreadNotifications.length}
+                    </span>
+                  )}
+                </div>
+              </Button>
             </div>
 
-            <Button variant="ghost" size="icon" onClick={goToNextDay} className="h-9 w-9">
-              <ChevronRight className="h-5 w-5" />
+            <div className="flex items-center justify-between gap-2">
+              <Button variant="ghost" size="icon" onClick={goToPreviousDay} className="h-9 w-9">
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+
+              <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg flex-1 justify-center">
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="border-none bg-transparent text-sm font-medium focus:outline-none text-center"
+                />
+              </div>
+
+              <Button variant="ghost" size="icon" onClick={goToNextDay} className="h-9 w-9">
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <Button variant="outline" size="sm" onClick={goToToday} className="w-full mt-2">
+              Today
             </Button>
           </div>
 
-          <Button variant="outline" size="sm" onClick={goToToday} className="w-full mt-2">
-            Today
-          </Button>
-        </div>
-
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto px-4 pt-4">
-            <div className="space-y-4 pb-24">
-              {allUnscheduledJobs.length > 0 && (
-                <Card className="bg-yellow-50 border-yellow-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <Package className="h-5 w-5 text-yellow-700" />
-                        <span>Unscheduled Jobs</span>
-                      </span>
-                      <Badge variant="secondary" className="bg-yellow-200 text-yellow-900">
-                        {allUnscheduledJobs.length}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {allUnscheduledJobs.map(job => {
-                      const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
-                      const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
-                      const pickupShortname = pickupLocation?.shortname;
-                      const cardStyles = getJobCardInlineStyles(deliveryType, job);
-                      const badgeStyles = getBadgeStyles(getJobCardStyles(deliveryType, job));
-                      const textStyles = getJobCardStyles(deliveryType, job);
-                      
-                      return (
-                        <div
-                          key={job.id}
-                          onClick={() => {
-                            setSelectedJob(job);
-                            setJobDialogOpen(true);
-                          }}
-                          className="p-3 rounded-lg border-2 active:bg-gray-50 transition-colors"
-                          style={{
-                            ...cardStyles,
-                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                          }}
-                        >
-                          <div className="flex justify-between items-start gap-2 mb-1">
-                            <div className="flex-1 min-w-0">
-                              {(deliveryType?.code || pickupShortname) && (
-                                <div className="mb-1 flex gap-1 flex-wrap">
-                                  {deliveryType?.code && (
-                                    <span 
-                                      className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm"
-                                      style={badgeStyles}
-                                    >
-                                      {textStyles.icon && <span className="text-sm">{textStyles.icon}</span>}
-                                      {deliveryType.code}
-                                    </span>
-                                  )}
-                                  {pickupShortname && (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
-                                      {pickupShortname}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                              <span className="font-semibold text-sm text-gray-900 block">{job.customerName}</span>
-                            </div>
-                            <div className="flex flex-col gap-1 items-end">
-                              {job.sqm && (
-                                <Badge variant="secondary" className="text-[10px] bg-white/90 text-gray-900">
-                                  {job.sqm}m²
-                                </Badge>
-                              )}
-                              {job.isDifficultDelivery && (
-                                <AlertTriangle className="h-4 w-4 text-orange-500" />
-                              )}
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-600">{job.deliveryLocation}</p>
-                          <p className="text-xs text-gray-500 mt-1">{job.deliveryTypeName}</p>
-                        </div>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
-              )}
-
-              {TRUCKS.map(truck => {
-                const truckJobs = getJobsForTruck(truck.id);
-                const totalSqm = getTruckUtilization(truck.id);
-                const utilizationPercent = Math.min((totalSqm / 2500) * 100, 100); 
-                
-                let barColor = 'bg-red-500';
-                if (totalSqm >= 1500) {
-                  barColor = 'bg-green-500';
-                } else if (totalSqm >= 1000) {
-                  barColor = 'bg-orange-500';
-                }
-
-                return (
-                  <Card key={truck.id}>
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto px-4 pt-4">
+              <div className="space-y-4 pb-24">
+                {allUnscheduledJobs.length > 0 && (
+                  <Card className="bg-yellow-50 border-yellow-200">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center justify-between">
                         <span className="flex items-center gap-2">
-                          <Truck className="h-5 w-5 text-blue-600" />
-                          <span>{truck.name}</span>
+                          <Package className="h-5 w-5 text-yellow-700" />
+                          <span>Unscheduled Jobs</span>
                         </span>
-                        <Badge variant="secondary">{truckJobs.length}</Badge>
+                        <Badge variant="secondary" className="bg-yellow-200 text-yellow-900">
+                          {allUnscheduledJobs.length}
+                        </Badge>
                       </CardTitle>
-                      <div className="mt-2">
-                        <div className="flex justify-between text-xs text-gray-600 mb-1">
-                          <span>Load: {totalSqm.toLocaleString()}m²</span>
-                          <span>{utilizationPercent.toFixed(0)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div className={`${barColor} h-2 rounded-full transition-all`} style={{ width: `${utilizationPercent}%` }}></div>
-                        </div>
-                      </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      {truckJobs.length === 0 ? (
-                        <p className="text-sm text-gray-500 text-center py-4">No jobs scheduled</p>
-                      ) : (
-                        <>
-                          {TIME_SLOTS.map(timeSlot => {
-                            const slotJobs = truckJobs.filter(item => item.timeSlot === timeSlot.id);
-                            if (slotJobs.length === 0) return null;
-
-                            return (
-                              <div key={timeSlot.id} className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Clock className="h-4 w-4 text-indigo-600" />
-                                  <span className="text-sm font-semibold text-indigo-900">{timeSlot.label}</span>
-                                </div>
-                                {slotJobs.map(({ job }) => {
-                                  const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
-                                  const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
-                                  const pickupShortname = pickupLocation?.shortname;
-                                  const cardStyles = getJobCardInlineStyles(deliveryType, job);
-                                  const badgeStyles = getBadgeStyles(getJobCardStyles(deliveryType, job));
-                                  const textStyles = getJobCardStyles(deliveryType, job);
-                                  
-                                  return (
-                                    <div
-                                      key={job.id}
-                                      onClick={() => {
-                                        setSelectedJob(job);
-                                        setJobDialogOpen(true);
-                                      }}
-                                      className="p-3 rounded-lg border-2 active:bg-gray-100 transition-colors"
-                                      style={{
-                                        ...cardStyles,
-                                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                                      }}
-                                    >
-                                      <div className="flex justify-between items-start gap-2 mb-1">
-                                        <div className="flex-1 min-w-0">
-                                          {(deliveryType?.code || pickupShortname) && (
-                                            <div className="mb-1 flex gap-1 flex-wrap">
-                                              {deliveryType?.code && (
-                                                <span 
-                                                  className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm"
-                                                  style={badgeStyles}
-                                                >
-                                                  {textStyles.icon && <span className="text-sm">{textStyles.icon}</span>}
-                                                  {deliveryType.code}
-                                                </span>
-                                              )}
-                                              {pickupShortname && (
-                                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
-                                                  {pickupShortname}
-                                                </span>
-                                              )}
-                                            </div>
-                                          )}
-                                          <span className="font-semibold text-sm text-gray-900 block">{job.customerName}</span>
-                                        </div>
-                                        <div className="flex flex-col gap-1 items-end">
-                                          {job.sqm && (
-                                            <Badge variant="outline" className="text-xs bg-white/90 text-gray-900">
-                                              {job.sqm}m²
-                                            </Badge>
-                                          )}
-                                          {job.isDifficultDelivery && (
-                                            <AlertTriangle className="h-4 w-4 text-orange-500" />
-                                          )}
-                                        </div>
-                                      </div>
-                                      <p className="text-sm text-gray-600">{job.deliveryLocation}</p>
-                                      <p className="text-xs text-gray-500 mt-1">{job.deliveryTypeName}</p>
-                                    </div>
-                                  );
-                                })}
+                    <CardContent className="space-y-2">
+                      {allUnscheduledJobs.map(job => {
+                        const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
+                        const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
+                        const pickupShortname = pickupLocation?.shortname;
+                        const cardStyles = getJobCardInlineStyles(deliveryType, job);
+                        const badgeStyles = getBadgeStyles(getJobCardStyles(deliveryType, job));
+                        const textStyles = getJobCardStyles(deliveryType, job);
+                        
+                        return (
+                          <div
+                            key={job.id}
+                            onClick={() => {
+                              setSelectedJob(job);
+                              setJobDialogOpen(true);
+                            }}
+                            className="p-3 rounded-lg border-2 active:bg-gray-50 transition-colors"
+                            style={{
+                              ...cardStyles,
+                              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                            }}
+                          >
+                            <div className="flex justify-between items-start gap-2 mb-1">
+                              <div className="flex-1 min-w-0">
+                                {(deliveryType?.code || pickupShortname) && (
+                                  <div className="mb-1 flex gap-1 flex-wrap">
+                                    {deliveryType?.code && (
+                                      <span 
+                                        className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm"
+                                        style={badgeStyles}
+                                      >
+                                        {textStyles.icon && <span className="text-sm">{textStyles.icon}</span>}
+                                        {deliveryType.code}
+                                      </span>
+                                    )}
+                                    {pickupShortname && (
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
+                                        {pickupShortname}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                <span className="font-semibold text-sm text-gray-900 block">{job.customerName}</span>
                               </div>
-                            );
-                          })}
-                        </>
-                      )}
+                              <div className="flex flex-col gap-1 items-end">
+                                {job.sqm && (
+                                  <Badge variant="secondary" className="text-[10px] bg-white/90 text-gray-900">
+                                    {job.sqm}m²
+                                  </Badge>
+                                )}
+                                {job.isDifficultDelivery && (
+                                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600">{job.deliveryLocation}</p>
+                            <p className="text-xs text-gray-500 mt-1">{job.deliveryTypeName}</p>
+                          </div>
+                        );
+                      })}
                     </CardContent>
                   </Card>
-                );
-              })}
+                )}
+
+                {TRUCKS.map(truck => {
+                  const truckJobs = getJobsForTruck(truck.id);
+                  const totalSqm = getTruckUtilization(truck.id);
+                  const utilizationPercent = Math.min((totalSqm / 2500) * 100, 100); 
+                  
+                  let barColor = 'bg-red-500';
+                  if (totalSqm >= 1500) {
+                    barColor = 'bg-green-500';
+                  } else if (totalSqm >= 1000) {
+                    barColor = 'bg-orange-500';
+                  }
+
+                  return (
+                    <Card key={truck.id}>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <Truck className="h-5 w-5 text-blue-600" />
+                            <span>{truck.name}</span>
+                          </span>
+                          <Badge variant="secondary">{truckJobs.length}</Badge>
+                        </CardTitle>
+                        <div className="mt-2">
+                          <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Load: {totalSqm.toLocaleString()}m²</span>
+                            <span>{utilizationPercent.toFixed(0)}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className={`${barColor} h-2 rounded-full transition-all`} style={{ width: `${utilizationPercent}%` }}></div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {truckJobs.length === 0 ? (
+                          <p className="text-sm text-gray-500 text-center py-4">No jobs scheduled</p>
+                        ) : (
+                          <>
+                            {TIME_SLOTS.map(timeSlot => {
+                              const slotJobs = truckJobs.filter(item => item.timeSlot === timeSlot.id);
+                              if (slotJobs.length === 0) return null;
+
+                              return (
+                                <div key={timeSlot.id} className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-indigo-600" />
+                                    <span className="text-sm font-semibold text-indigo-900">{timeSlot.label}</span>
+                                  </div>
+                                  {slotJobs.map(({ job }) => {
+                                    const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
+                                    const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
+                                    const pickupShortname = pickupLocation?.shortname;
+                                    const cardStyles = getJobCardInlineStyles(deliveryType, job);
+                                    const badgeStyles = getBadgeStyles(getJobCardStyles(deliveryType, job));
+                                    const textStyles = getJobCardStyles(deliveryType, job);
+                                    
+                                    return (
+                                      <div
+                                        key={job.id}
+                                        onClick={() => {
+                                          setSelectedJob(job);
+                                          setJobDialogOpen(true);
+                                        }}
+                                        className="p-3 rounded-lg border-2 active:bg-gray-100 transition-colors"
+                                        style={{
+                                          ...cardStyles,
+                                          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                        }}
+                                      >
+                                        <div className="flex justify-between items-start gap-2 mb-1">
+                                          <div className="flex-1 min-w-0">
+                                            {(deliveryType?.code || pickupShortname) && (
+                                              <div className="mb-1 flex gap-1 flex-wrap">
+                                                {deliveryType?.code && (
+                                                  <span 
+                                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm"
+                                                    style={badgeStyles}
+                                                  >
+                                                    {textStyles.icon && <span className="text-sm">{textStyles.icon}</span>}
+                                                    {deliveryType.code}
+                                                  </span>
+                                                )}
+                                                {pickupShortname && (
+                                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
+                                                    {pickupShortname}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+                                            <span className="font-semibold text-sm text-gray-900 block">{job.customerName}</span>
+                                          </div>
+                                          <div className="flex flex-col gap-1 items-end">
+                                            {job.sqm && (
+                                              <Badge variant="outline" className="text-xs bg-white/90 text-gray-900">
+                                                {job.sqm}m²
+                                              </Badge>
+                                            )}
+                                            {job.isDifficultDelivery && (
+                                              <AlertTriangle className="h-4 w-4 text-orange-500" />
+                                            )}
+                                          </div>
+                                        </div>
+                                        <p className="text-sm text-gray-600">{job.deliveryLocation}</p>
+                                        <p className="text-xs text-gray-500 mt-1">{job.deliveryTypeName}</p>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })}
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+
+        <CreateJobForm 
+          open={isCreateJobOpen}
+          onOpenChange={setCreateJobOpen}
+          onJobCreated={fetchData}
+        />
+
+        <JobDetailsDialog
+          job={selectedJob}
+          open={isJobDialogOpen}
+          onOpenChange={setJobDialogOpen}
+          onJobUpdated={fetchData}
+        />
+
+        <CreatePlaceholderDialog
+          open={createPlaceholderOpen}
+          onOpenChange={setCreatePlaceholderOpen}
+          truckId={placeholderSlot?.truckId}
+          timeSlotId={placeholderSlot?.timeSlotId}
+          slotPosition={placeholderSlot?.slotPosition}
+          date={selectedDate}
+          onCreated={fetchData}
+        />
+      </>
     );
   }
 
