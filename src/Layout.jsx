@@ -10,6 +10,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Toaster } from '@/components/ui/toaster'; // Added Toaster import
 import {
   LogOut,
   Menu,
@@ -605,6 +606,7 @@ export default function Layout({ children, currentPageName }) {
       </div>
 
       <ChatWidget />
+      <Toaster /> {/* Added Toaster component */}
     </OfflineProvider>
   );
 }
