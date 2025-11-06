@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
+import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from '../components/scheduling/DeliveryTypeColorUtils';
 
 
 const TRUCKS = [
@@ -353,297 +354,266 @@ export default function SchedulingBoard() {
     );
   }
 
-  // Helper function to get colors and icon for delivery type
-  const getDeliveryTypeStyles = (deliveryType, isDifficult) => {
-    let bgColor = 'bg-white';
-    let pillBgClass = 'bg-blue-100';
-    let pillTextClass = 'text-blue-700';
-    let icon = '';
-    let borderClass = 'border-gray-200';
-
-    if (isDifficult) {
-      bgColor = 'bg-[#F1AC88]';
-      pillBgClass = 'bg-[#FF7A86]';
-      pillTextClass = 'text-white';
-      icon = '⚠️';
-      borderClass = 'border-orange-300';
-    } else if (deliveryType?.code === 'HAND') {
-      bgColor = 'bg-white'; // Changed from bg-[#C6FEFF] to bg-white
-      pillBgClass = 'bg-[#ACD6F6]';
-      pillTextClass = 'text-gray-900';
-      icon = '✋';
-    } else if (deliveryType?.code === 'MANS') {
-      bgColor = 'bg-[#F8B2AF]';
-      pillBgClass = 'bg-[#ED5461]';
-      pillTextClass = 'text-white';
-      icon = '🔼';
-    } else if (deliveryType?.code === 'UNITUP') {
-      bgColor = 'bg-[#B2D7FF]';
-      pillBgClass = 'bg-[#47A0FF]';
-      pillTextClass = 'text-white';
-      icon = '⬆️';
-    } else if (deliveryType?.code === 'UPDWN') {
-      bgColor = 'bg-[#FFDBF3]';
-      pillBgClass = 'bg-[#FF8EDC]';
-      pillTextClass = 'text-white';
-      icon = '↕️';
-    } else if (deliveryType?.code === 'UNITDWN') {
-      bgColor = 'bg-[#EEDBFF]';
-      pillBgClass = 'bg-[#CA8EFF]';
-      pillTextClass = 'text-white';
-      icon = '⬇️';
-    } else if (deliveryType?.code === 'LATE') {
-      bgColor = 'bg-[#E2E8F0]';
-      pillBgClass = 'bg-[#EFE9E0]';
-      pillTextClass = 'text-gray-900';
-      icon = '🌛';
-    } else if (deliveryType?.code === 'BOAT') {
-      bgColor = 'bg-[#BBD3F0]';
-      pillBgClass = 'bg-[#F0D8BB]';
-      pillTextClass = 'text-gray-900';
-      icon = '⛵';
-    }
-
-    return { bgColor, pillBgClass, pillTextClass, icon, borderClass };
-  };
-
-  return (
-    <>
-      {isMobile ? (
-        <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 flex-shrink-0">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <Calendar className="h-6 w-6" />
-                <h1 className="text-xl font-bold">Scheduling Board</h1>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-blue-700"
-                onClick={() => setNotificationOpen(true)}
-              >
-                <div className="relative">
-                  <Bell className="h-5 w-5" />
-                  {unreadNotifications.length > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold">
-                      {unreadNotifications.length}
-                    </span>
-                  )}
-                </div>
-              </Button>
+  // MOBILE VIEW
+  if (isMobile) {
+    return (
+      <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 flex-shrink-0">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-6 w-6" />
+              <h1 className="text-xl font-bold">Scheduling Board</h1>
             </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={goToPreviousDay}
-                className="text-white hover:bg-blue-700 h-8 w-8"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <div className="flex-1 text-center">
-                <p className="text-sm font-medium">{format(new Date(selectedDate), 'EEEE, MMMM d, yyyy')}</p>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-blue-700"
+              onClick={() => setNotificationOpen(true)}
+            >
+              <div className="relative">
+                <Bell className="h-5 w-5" />
+                {unreadNotifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold">
+                    {unreadNotifications.length}
+                  </span>
+                )}
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={goToNextDay}
-                className="text-white hover:bg-blue-700 h-8 w-8"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
+            </Button>
           </div>
 
-          {loading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goToPreviousDay}
+              className="text-white hover:bg-blue-700 h-8 w-8"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex-1 text-center">
+              <p className="text-sm font-medium">{format(new Date(selectedDate), 'EEEE, MMMM d, yyyy')}</p>
             </div>
-          ) : (
-            <div className="flex-1 overflow-y-auto px-4 pt-4">
-              <div className="space-y-4 pb-24">
-                {allUnscheduledJobs.length > 0 && (
-                  <Card className="bg-yellow-50 border-yellow-200">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goToNextDay}
+              className="text-white hover:bg-blue-700 h-8 w-8"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-4 pt-4">
+            <div className="space-y-4 pb-24">
+              {allUnscheduledJobs.length > 0 && (
+                <Card className="bg-yellow-50 border-yellow-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <Package className="h-5 w-5 text-yellow-700" />
+                        <span>Unscheduled Jobs</span>
+                      </span>
+                      <Badge variant="secondary" className="bg-yellow-200 text-yellow-900">
+                        {allUnscheduledJobs.length}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {allUnscheduledJobs.map(job => {
+                      const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
+                      const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
+                      const pickupShortname = pickupLocation?.shortname;
+                      const cardStyles = getJobCardInlineStyles(deliveryType, job);
+                      const badgeStyles = getBadgeStyles(getJobCardStyles(deliveryType, job));
+                      const textStyles = getJobCardStyles(deliveryType, job);
+                      
+                      return (
+                        <div
+                          key={job.id}
+                          onClick={() => {
+                            setSelectedJob(job);
+                            setJobDialogOpen(true);
+                          }}
+                          className="p-3 rounded-lg border-2 active:bg-gray-50 transition-colors"
+                          style={{
+                            ...cardStyles,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                          }}
+                        >
+                          <div className="flex justify-between items-start gap-2 mb-1">
+                            <div className="flex-1 min-w-0">
+                              {(deliveryType?.code || pickupShortname) && (
+                                <div className="mb-1 flex gap-1 flex-wrap">
+                                  {deliveryType?.code && (
+                                    <span 
+                                      className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm"
+                                      style={badgeStyles}
+                                    >
+                                      {textStyles.icon && <span className="text-sm">{textStyles.icon}</span>}
+                                      {deliveryType.code}
+                                    </span>
+                                  )}
+                                  {pickupShortname && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
+                                      {pickupShortname}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              <span className="font-semibold text-sm text-gray-900 block">{job.customerName}</span>
+                            </div>
+                            <div className="flex flex-col gap-1 items-end">
+                              {job.sqm && (
+                                <Badge variant="secondary" className="text-[10px] bg-white/90 text-gray-900">
+                                  {job.sqm}m²
+                                </Badge>
+                              )}
+                              {job.isDifficultDelivery && (
+                                <AlertTriangle className="h-4 w-4 text-orange-500" />
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600">{job.deliveryLocation}</p>
+                          <p className="text-xs text-gray-500 mt-1">{job.deliveryTypeName}</p>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              )}
+
+              {TRUCKS.map(truck => {
+                const truckJobs = getJobsForTruck(truck.id);
+                const totalSqm = getTruckUtilization(truck.id);
+                const utilizationPercent = Math.min((totalSqm / 2500) * 100, 100); 
+                
+                let barColor = 'bg-red-500';
+                if (totalSqm >= 1500) {
+                  barColor = 'bg-green-500';
+                } else if (totalSqm >= 1000) {
+                  barColor = 'bg-orange-500';
+                }
+
+                return (
+                  <Card key={truck.id}>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center justify-between">
                         <span className="flex items-center gap-2">
-                          <Package className="h-5 w-5 text-yellow-700" />
-                          <span>Notifications</span>
+                          <Truck className="h-5 w-5 text-blue-600" />
+                          <span>{truck.name}</span>
                         </span>
-                        <Badge variant="secondary" className="bg-yellow-200 text-yellow-900">
-                          {allUnscheduledJobs.length}
-                        </Badge>
+                        <Badge variant="secondary">{truckJobs.length}</Badge>
                       </CardTitle>
+                      <div className="mt-2">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>Load: {totalSqm.toLocaleString()}m²</span>
+                          <span>{utilizationPercent.toFixed(0)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className={`${barColor} h-2 rounded-full transition-all`} style={{ width: `${utilizationPercent}%` }}></div>
+                        </div>
+                      </div>
                     </CardHeader>
-                    <CardContent className="space-y-2">
-                      {allUnscheduledJobs.map(job => {
-                        const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
-                        const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
-                        const pickupShortname = pickupLocation?.shortname;
-                        const styles = getDeliveryTypeStyles(deliveryType, job.isDifficultDelivery);
-                        
-                        return (
-                          <div
-                            key={job.id}
-                            onClick={() => {
-                              setSelectedJob(job);
-                              setJobDialogOpen(true);
-                            }}
-                            className={`${styles.bgColor} p-3 rounded-lg border-2 ${styles.borderClass} active:bg-gray-50 transition-colors`}
-                          >
-                            <div className="flex justify-between items-start gap-2 mb-1">
-                              <div className="flex-1 min-w-0">
-                                {(deliveryType?.code || pickupShortname) && (
-                                  <div className="mb-1 flex gap-1 flex-wrap">
-                                    {deliveryType?.code && (
-                                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${styles.pillBgClass} ${styles.pillTextClass} flex items-center gap-0.5`}>
-                                        {styles.icon && <span>{styles.icon}</span>}
-                                        {deliveryType.code}
-                                      </span>
-                                    )}
-                                    {pickupShortname && (
-                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
-                                        {pickupShortname}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                                <span className="font-semibold text-sm text-gray-900 block">{job.customerName}</span>
+                    <CardContent className="space-y-3">
+                      {truckJobs.length === 0 ? (
+                        <p className="text-sm text-gray-500 text-center py-4">No jobs scheduled</p>
+                      ) : (
+                        <>
+                          {TIME_SLOTS.map(timeSlot => {
+                            const slotJobs = truckJobs.filter(item => item.timeSlot === timeSlot.id);
+                            if (slotJobs.length === 0) return null;
+
+                            return (
+                              <div key={timeSlot.id} className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-indigo-600" />
+                                  <span className="text-sm font-semibold text-indigo-900">{timeSlot.label}</span>
+                                </div>
+                                {slotJobs.map(({ job }) => {
+                                  const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
+                                  const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
+                                  const pickupShortname = pickupLocation?.shortname;
+                                  const cardStyles = getJobCardInlineStyles(deliveryType, job);
+                                  const badgeStyles = getBadgeStyles(getJobCardStyles(deliveryType, job));
+                                  const textStyles = getJobCardStyles(deliveryType, job);
+                                  
+                                  return (
+                                    <div
+                                      key={job.id}
+                                      onClick={() => {
+                                        setSelectedJob(job);
+                                        setJobDialogOpen(true);
+                                      }}
+                                      className="p-3 rounded-lg border-2 active:bg-gray-100 transition-colors"
+                                      style={{
+                                        ...cardStyles,
+                                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                      }}
+                                    >
+                                      <div className="flex justify-between items-start gap-2 mb-1">
+                                        <div className="flex-1 min-w-0">
+                                          {(deliveryType?.code || pickupShortname) && (
+                                            <div className="mb-1 flex gap-1 flex-wrap">
+                                              {deliveryType?.code && (
+                                                <span 
+                                                  className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm"
+                                                  style={badgeStyles}
+                                                >
+                                                  {textStyles.icon && <span className="text-sm">{textStyles.icon}</span>}
+                                                  {deliveryType.code}
+                                                </span>
+                                              )}
+                                              {pickupShortname && (
+                                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
+                                                  {pickupShortname}
+                                                </span>
+                                              )}
+                                            </div>
+                                          )}
+                                          <span className="font-semibold text-sm text-gray-900 block">{job.customerName}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 items-end">
+                                          {job.sqm && (
+                                            <Badge variant="outline" className="text-xs bg-white/90 text-gray-900">
+                                              {job.sqm}m²
+                                            </Badge>
+                                          )}
+                                          {job.isDifficultDelivery && (
+                                            <AlertTriangle className="h-4 w-4 text-orange-500" />
+                                          )}
+                                        </div>
+                                      </div>
+                                      <p className="text-sm text-gray-600">{job.deliveryLocation}</p>
+                                      <p className="text-xs text-gray-500 mt-1">{job.deliveryTypeName}</p>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                              <div className="flex flex-col gap-1 items-end">
-                                {job.sqm && (
-                                  <Badge variant="secondary" className="text-[10px] bg-gray-100">
-                                    {job.sqm}m²
-                                  </Badge>
-                                )}
-                                {job.isDifficultDelivery && (
-                                  <AlertTriangle className="h-4 w-4 text-orange-500" />
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-sm text-gray-600">{job.deliveryLocation}</p>
-                            <p className="text-xs text-gray-500 mt-1">{job.deliveryTypeName}</p>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </>
+                      )}
                     </CardContent>
                   </Card>
-                )}
-
-                {TRUCKS.map(truck => {
-                  const truckJobs = getJobsForTruck(truck.id);
-                  const totalSqm = getTruckUtilization(truck.id);
-                  const utilizationPercent = Math.min((totalSqm / 2500) * 100, 100); 
-                  
-                  let barColor = 'bg-red-500';
-                  if (totalSqm >= 1500) {
-                    barColor = 'bg-green-500';
-                  } else if (totalSqm >= 1000) {
-                    barColor = 'bg-orange-500';
-                  }
-
-                  return (
-                    <Card key={truck.id}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center justify-between">
-                          <span className="flex items-center gap-2">
-                            <Truck className="h-5 w-5 text-blue-600" />
-                            <span>{truck.name}</span>
-                          </span>
-                          <Badge variant="secondary">{truckJobs.length}</Badge>
-                        </CardTitle>
-                        <div className="mt-2">
-                          <div className="flex justify-between text-xs text-gray-600 mb-1">
-                            <span>Load: {totalSqm.toLocaleString()}m²</span>
-                            <span>{utilizationPercent.toFixed(0)}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className={`${barColor} h-2 rounded-full transition-all`} style={{ width: `${utilizationPercent}%` }}></div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {truckJobs.length === 0 ? (
-                          <p className="text-sm text-gray-500 text-center py-4">No jobs scheduled</p>
-                        ) : (
-                          <>
-                            {TIME_SLOTS.map(timeSlot => {
-                              const slotJobs = truckJobs.filter(item => item.timeSlot === timeSlot.id);
-                              if (slotJobs.length === 0) return null;
-
-                              return (
-                                <div key={timeSlot.id} className="space-y-2">
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4 text-indigo-600" />
-                                    <span className="text-sm font-semibold text-indigo-900">{timeSlot.label}</span>
-                                  </div>
-                                  {slotJobs.map(({ job }) => {
-                                    const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
-                                    const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
-                                    const pickupShortname = pickupLocation?.shortname;
-                                    const styles = getDeliveryTypeStyles(deliveryType, job.isDifficultDelivery);
-                                    
-                                    return (
-                                      <div
-                                        key={job.id}
-                                        onClick={() => {
-                                          setSelectedJob(job);
-                                          setJobDialogOpen(true);
-                                        }}
-                                        className={`${styles.bgColor} p-3 rounded-lg border-2 ${styles.borderClass} active:bg-gray-100 transition-colors`}
-                                      >
-                                        <div className="flex justify-between items-start gap-2 mb-1">
-                                          <div className="flex-1 min-w-0">
-                                            {(deliveryType?.code || pickupShortname) && (
-                                              <div className="mb-1 flex gap-1 flex-wrap">
-                                                {deliveryType?.code && (
-                                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${styles.pillBgClass} ${styles.pillTextClass} flex items-center gap-0.5`}>
-                                                    {styles.icon && <span>{styles.icon}</span>}
-                                                    {deliveryType.code}
-                                                  </span>
-                                                )}
-                                                {pickupShortname && (
-                                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
-                                                    {pickupShortname}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            )}
-                                            <span className="font-semibold text-sm text-gray-900 block">{job.customerName}</span>
-                                          </div>
-                                          <div className="flex flex-col gap-1 items-end">
-                                            {job.sqm && (
-                                              <Badge variant="secondary" className="text-[10px]">
-                                                {job.sqm}m²
-                                              </Badge>
-                                            )}
-                                            {job.isDifficultDelivery && (
-                                              <AlertTriangle className="h-4 w-4 text-orange-500" />
-                                            )}
-                                          </div>
-                                        </div>
-                                        <p className="text-sm text-gray-600">{job.deliveryLocation}</p>
-                                        <p className="text-xs text-gray-500 mt-1">{job.deliveryTypeName}</p>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            })}
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                );
+              })}
             </div>
-          )}
-        </div>
-      ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // DESKTOP VIEW
+  return (
+    <>
+      <DragDropContext onDragEnd={handleDragEnd}>
           <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
             <div className="bg-white border-b px-4 md:px-6 py-4 flex-shrink-0 z-30">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -825,7 +795,6 @@ export default function SchedulingBoard() {
             )}
           </div>
         </DragDropContext>
-      )}
 
       <CreateJobForm 
         open={isCreateJobOpen}
