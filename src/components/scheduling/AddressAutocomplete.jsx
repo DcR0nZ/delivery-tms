@@ -152,7 +152,6 @@ export default function AddressAutocomplete({ id, value, onChange, placeholder, 
         
         if (!mountedRef.current) return;
         
-        // Set flag immediately to prevent input change handler
         isProcessingAutocomplete.current = true;
         
         const place = autocomplete.getPlace();
@@ -172,13 +171,11 @@ export default function AddressAutocomplete({ id, value, onChange, placeholder, 
 
         console.log('✅ Address data extracted:', addressData);
 
-        // Update parent with selected address and coordinates
         if (onChange && mountedRef.current) {
           onChange(addressData);
           console.log('✅ onChange called with address data');
         }
         
-        // Keep flag set for a bit longer to ensure input change event doesn't override
         setTimeout(() => {
           isProcessingAutocomplete.current = false;
         }, 300);
@@ -226,11 +223,9 @@ export default function AddressAutocomplete({ id, value, onChange, placeholder, 
     };
   }, []);
 
-  // Handle manual input value changes
   const handleInputChange = (e) => {
     if (!mountedRef.current) return;
     
-    // Don't process if autocomplete is currently selecting
     if (isProcessingAutocomplete.current) {
       console.log('⏭️ Skipping input change (autocomplete is processing)');
       return;
@@ -239,14 +234,13 @@ export default function AddressAutocomplete({ id, value, onChange, placeholder, 
     const newValue = e.target.value;
     console.log('⌨️ Manual input change:', newValue);
     
-    // Call onChange with new address but null coordinates (manual input)
     if (onChange) {
       onChange({ address: newValue, latitude: null, longitude: null });
     }
   };
 
   return (
-    <div className="relative">
+    <div className="relative" data-autocomplete-wrapper="true">
       <input
         ref={inputRef}
         id={id}
@@ -256,8 +250,7 @@ export default function AddressAutocomplete({ id, value, onChange, placeholder, 
         autoComplete="off"
         value={value || ''}
         onChange={handleInputChange}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
+        data-autocomplete-input="true"
         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       />
       {!scriptLoaded && (

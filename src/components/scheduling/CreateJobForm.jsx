@@ -261,9 +261,15 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
 
   const handleInteractOutside = (e) => {
     const target = e.target;
-    // Check if click is on Google Places autocomplete dropdown
-    if (target.closest('.pac-container') || target.classList.contains('pac-item')) {
+    
+    // Prevent closing when clicking on Google Places autocomplete or related elements
+    if (target.closest('.pac-container') || 
+        target.classList.contains('pac-item') ||
+        target.classList.contains('pac-item-query') ||
+        target.closest('[data-autocomplete-wrapper]') ||
+        target.hasAttribute('data-autocomplete-input')) {
       e.preventDefault();
+      e.stopPropagation(); // Stop propagation to prevent radix-ui from closing the dialog
       return;
     }
   };
@@ -485,6 +491,7 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
         <DialogContent 
           className="sm:max-w-[600px]"
           onInteractOutside={handleInteractOutside}
+          onPointerDownOutside={handleInteractOutside}
         >
           <DialogHeader>
             <DialogTitle>Create New Job</DialogTitle>

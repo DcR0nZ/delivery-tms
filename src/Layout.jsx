@@ -451,31 +451,45 @@ export default function Layout({ children, currentPageName }) {
           padding: 0;
         }
         
-        /* Fix for Google Places Autocomplete dropdown */
+        /* Fix for Google Places Autocomplete dropdown - MAXIMUM z-index */
         .pac-container {
-          z-index: 99999 !important;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-          border-radius: 0.375rem;
-          border: 1px solid #e5e7eb;
-          margin-top: 4px;
+          z-index: 999999 !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+          border-radius: 0.375rem !important;
+          border: 1px solid #e5e7eb !important;
+          margin-top: 4px !important;
+          background: white !important;
         }
         
         .pac-item {
-          padding: 8px 12px;
-          cursor: pointer;
-          border: none;
+          padding: 8px 12px !important;
+          cursor: pointer !important;
+          border: none !important;
+          background: white !important;
+          line-height: 1.5 !important;
         }
         
         .pac-item:hover {
-          background-color: #f3f4f6;
+          background-color: #f3f4f6 !important;
         }
         
-        .pac-item-selected {
-          background-color: #e5e7eb;
+        .pac-item-selected,
+        .pac-item-selected:hover {
+          background-color: #e5e7eb !important;
         }
         
         .pac-icon {
-          margin-right: 8px;
+          margin-right: 8px !important;
+        }
+        
+        .pac-item-query {
+          font-weight: 600 !important;
+          color: #111827 !important;
+        }
+        
+        /* Ensure autocomplete dropdown clicks are not blocked */
+        .pac-container * {
+          pointer-events: auto !important;
         }
       `}</style>
       
