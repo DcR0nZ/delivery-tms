@@ -314,6 +314,15 @@ export default function CustomerRequestDeliveryPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleInteractOutside = (e) => {
+    const target = e.target;
+    // Check if click is on Google Places autocomplete dropdown
+    if (target.closest('.pac-container') || target.classList.contains('pac-item')) {
+      e.preventDefault();
+      return;
+    }
+  };
+
   const selectedDeliveryType = deliveryTypes.find(t => t.id === formData.deliveryTypeId);
   const isUnitsDelivery = selectedDeliveryType?.name?.toLowerCase().includes('units');
 
@@ -406,7 +415,12 @@ export default function CustomerRequestDeliveryPage() {
       
       <form onSubmit={handleSubmit}>
         <Card>
-          <CardContent className="p-6 space-y-6">
+          <CardContent className="p-6 space-y-6" onPointerDownCapture={(e) => {
+            // Prevent dialog closing when clicking on autocomplete
+            if (e.target.closest('.pac-container')) {
+              e.stopPropagation();
+            }
+          }}>
             
             {/* AI Document Extraction Section */}
             <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-purple-50 border-2 border-purple-200 rounded-lg p-4 shadow-sm">

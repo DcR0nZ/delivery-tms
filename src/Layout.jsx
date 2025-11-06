@@ -285,7 +285,7 @@ const ManagerNav = ({ collapsed }) => {
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // ADDED
+  const [error, setError] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
 
@@ -341,7 +341,7 @@ export default function Layout({ children, currentPageName }) {
         }
       } catch (e) {
         console.error('Authentication error:', e);
-        setError(e); // ADDED
+        setError(e);
         if (!window.location.search.includes('code=') && !window.location.search.includes('state=')) {
           const nextUrl = window.location.href;
           base44.auth.redirectToLogin(nextUrl);
@@ -360,7 +360,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const renderNavLinks = () => {
-    if (!user) return null; // ADDED
+    if (!user) return null;
     const needsCustomerId = user.appRole === 'customer' || user.appRole === 'manager' || !user.appRole;
     const isPending = !!(user && user.role !== 'admin' && needsCustomerId && !user.customerId);
 
@@ -416,9 +416,9 @@ export default function Layout({ children, currentPageName }) {
 
   if (isPending && currentPageName === 'AccessPending') {
     return (
-      <OfflineProvider> {/* WRAPPED WITH OFFLINEPROVIDER */}
+      <OfflineProvider>
         <div className="min-h-screen w-full bg-gray-50 overflow-auto">
-          <main className="p-6"> {/* MODIFIED */}
+          <main className="p-6">
             {children}
           </main>
         </div>
@@ -450,9 +450,36 @@ export default function Layout({ children, currentPageName }) {
           margin: 0;
           padding: 0;
         }
+        
+        /* Fix for Google Places Autocomplete dropdown */
+        .pac-container {
+          z-index: 99999 !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          border-radius: 0.375rem;
+          border: 1px solid #e5e7eb;
+          margin-top: 4px;
+        }
+        
+        .pac-item {
+          padding: 8px 12px;
+          cursor: pointer;
+          border: none;
+        }
+        
+        .pac-item:hover {
+          background-color: #f3f4f6;
+        }
+        
+        .pac-item-selected {
+          background-color: #e5e7eb;
+        }
+        
+        .pac-icon {
+          margin-right: 8px;
+        }
       `}</style>
       
-      <div className="h-screen w-screen flex bg-gray-50 overflow-hidden"> {/* MODIFIED */}
+      <div className="h-screen w-screen flex bg-gray-50 overflow-hidden">
         {/* Desktop Sidebar */}
         <div className={`hidden md:flex flex-col ${sidebarWidth} border-r bg-white h-full fixed left-0 top-0 z-20 transition-all duration-300`}>
           <div className={`flex items-center flex-shrink-0 px-4 pt-5 pb-4 ${sidebarCollapsed ? 'justify-center' : ''}`}>
@@ -505,7 +532,7 @@ export default function Layout({ children, currentPageName }) {
         {/* Main Content Wrapper - applies margin for desktop, contains mobile header & main */}
         <div className={`flex-1 flex flex-col ${mainMargin} h-full transition-all duration-300`}>
           {/* Mobile Header */}
-          <div className="md:hidden bg-white border-b px-4 py-3 flex items-center justify-between z-30"> {/* MODIFIED */}
+          <div className="md:hidden bg-white border-b px-4 py-3 flex items-center justify-between z-30">
             <Sheet>
               <SheetTrigger asChild>
                 <Button 
@@ -517,7 +544,7 @@ export default function Layout({ children, currentPageName }) {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0"> {/* MODIFIED (removed z-50 class) */}
+              <SheetContent side="left" className="w-64 p-0">
                 <div className="flex flex-col h-full">
                   <div className="flex items-center flex-shrink-0 px-4 pt-5">
                     <Truck className="h-8 w-8 text-blue-600" />
@@ -549,15 +576,15 @@ export default function Layout({ children, currentPageName }) {
               </SheetContent>
             </Sheet>
 
-            <div className="flex items-center gap-2"> {/* ADDED */}
+            <div className="flex items-center gap-2">
               <Truck className="h-6 w-6 text-blue-600" />
               <span className="font-semibold text-lg">{getSidebarTitle()}</span>
             </div>
 
-            <div className="w-10"></div> {/* ADDED */}
+            <div className="w-10"></div>
           </div>
 
-          <main className="flex-1 overflow-y-auto p-6"> {/* MODIFIED */}
+          <main className="flex-1 overflow-y-auto p-6">
             {children}
           </main>
         </div>

@@ -261,8 +261,10 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
 
   const handleInteractOutside = (e) => {
     const target = e.target;
-    if (target.closest('.pac-container')) {
+    // Check if click is on Google Places autocomplete dropdown
+    if (target.closest('.pac-container') || target.classList.contains('pac-item')) {
       e.preventDefault();
+      return;
     }
   };
 
