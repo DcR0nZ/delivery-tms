@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,7 +123,10 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
           updates.deliveryNotes = selectedCustomer.deliveryInstructions;
         }
         
-        if (selectedCustomer.usualSupplier && !formData.pickupLocationId) {
+        // Skip auto-fill pickup location for Southpak customer
+        const isSouthpak = selectedCustomer.customerName?.toLowerCase().includes('southpak');
+        
+        if (selectedCustomer.usualSupplier && !formData.pickupLocationId && !isSouthpak) {
           const matchingLocation = pickupLocations.find(
             loc => loc.sheetType?.toLowerCase() === selectedCustomer.usualSupplier.toLowerCase()
           );
