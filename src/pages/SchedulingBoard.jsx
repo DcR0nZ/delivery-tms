@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
@@ -639,59 +638,101 @@ export default function SchedulingBoard() {
   return (
     <>
       <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
-            <div className="bg-white border-b px-4 md:px-6 py-4 flex-shrink-0 z-30">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h1 className="text-xl md:text-2xl font-bold text-gray-900">Delivery Scheduler</h1>
-                  <p className="text-sm md:text-base text-gray-600 mt-1">Drag jobs to schedule them in time slots</p>
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  {/* Notification Dropdown */}
-                  <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        className="relative"
-                      >
-                        <Bell 
-                          className={`h-5 w-5 ${unreadNotifications.length > 0 ? 'fill-red-500 text-red-500' : ''}`}
-                        />
-                        {unreadNotifications.length > 0 && (
-                          <Badge 
-                            className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs"
-                          >
-                            {unreadNotifications.length}
-                          </Badge>
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-80">
-                      <div className="p-3 border-b">
-                        <h3 className="font-semibold text-sm">Notifications</h3>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {unreadNotifications.length} unread notification{unreadNotifications.length !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                      <ScrollArea className="h-[400px]">
-                        {unreadNotifications.length === 0 && readNotifications.length === 0 ? (
-                          <div className="p-4 text-center text-sm text-gray-500">
-                            No notifications
-                          </div>
-                        ) : (
-                          <div className="flex flex-col">
-                            {/* Unread Section */}
-                            {unreadNotifications.length > 0 && (
+        <div className="space-y-6">
+          <div className="bg-white border-b px-4 md:px-6 py-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">Delivery Scheduler</h1>
+                <p className="text-sm md:text-base text-gray-600 mt-1">Drag jobs to schedule them in time slots</p>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Notification Dropdown */}
+                <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      className="relative"
+                    >
+                      <Bell 
+                        className={`h-5 w-5 ${unreadNotifications.length > 0 ? 'fill-red-500 text-red-500' : ''}`}
+                      />
+                      {unreadNotifications.length > 0 && (
+                        <Badge 
+                          className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs"
+                        >
+                          {unreadNotifications.length}
+                        </Badge>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80">
+                    <div className="p-3 border-b">
+                      <h3 className="font-semibold text-sm">Notifications</h3>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {unreadNotifications.length} unread notification{unreadNotifications.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <ScrollArea className="h-[400px]">
+                      {unreadNotifications.length === 0 && readNotifications.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-gray-500">
+                          No notifications
+                        </div>
+                      ) : (
+                        <div className="flex flex-col">
+                          {/* Unread Section */}
+                          {unreadNotifications.length > 0 && (
+                            <div className="p-2">
+                              <div className="px-2 py-1 text-xs font-semibold text-gray-700 uppercase">
+                                Unread
+                              </div>
+                              {unreadNotifications.map(job => (
+                                <button
+                                  key={job.id}
+                                  onClick={() => handleJobFromNotification(job)}
+                                  className="w-full p-3 mb-2 text-left hover:bg-gray-50 rounded-lg border-2 border-blue-200 bg-blue-50 transition-colors"
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-sm text-gray-900 truncate">
+                                        {job.customerName}
+                                      </p>
+                                      <p className="text-xs text-gray-600 mt-1">
+                                        {job.deliveryTypeName}
+                                      </p>
+                                      <div className="flex items-center gap-1 mt-1">
+                                        <Calendar className="h-3 w-3 text-gray-400" />
+                                        <p className="text-xs text-gray-500">
+                                          {job.requestedDate ? format(new Date(job.requestedDate), 'MMM d, yyyy') : 'N/A'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                                      {job.sqm && (
+                                        <Badge variant="outline" className="text-xs">
+                                          {job.sqm.toLocaleString()}m²
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Read Section */}
+                          {readNotifications.length > 0 && (
+                            <>
+                              {unreadNotifications.length > 0 && <DropdownMenuSeparator />}
                               <div className="p-2">
-                                <div className="px-2 py-1 text-xs font-semibold text-gray-700 uppercase">
-                                  Unread
+                                <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase">
+                                  Read
                                 </div>
-                                {unreadNotifications.map(job => (
+                                {readNotifications.map(job => (
                                   <button
                                     key={job.id}
                                     onClick={() => handleJobFromNotification(job)}
-                                    className="w-full p-3 mb-2 text-left hover:bg-gray-50 rounded-lg border-2 border-blue-200 bg-blue-50 transition-colors"
+                                    className="w-full p-3 mb-2 text-left hover:bg-gray-50 rounded-lg border border-gray-200 bg-white opacity-60 transition-colors"
                                   >
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="flex-1 min-w-0">
@@ -719,107 +760,64 @@ export default function SchedulingBoard() {
                                   </button>
                                 ))}
                               </div>
-                            )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-                            {/* Read Section */}
-                            {readNotifications.length > 0 && (
-                              <>
-                                {unreadNotifications.length > 0 && <DropdownMenuSeparator />}
-                                <div className="p-2">
-                                  <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase">
-                                    Read
-                                  </div>
-                                  {readNotifications.map(job => (
-                                    <button
-                                      key={job.id}
-                                      onClick={() => handleJobFromNotification(job)}
-                                      className="w-full p-3 mb-2 text-left hover:bg-gray-50 rounded-lg border border-gray-200 bg-white opacity-60 transition-colors"
-                                    >
-                                      <div className="flex items-start justify-between gap-2">
-                                        <div className="flex-1 min-w-0">
-                                          <p className="font-medium text-sm text-gray-900 truncate">
-                                            {job.customerName}
-                                          </p>
-                                          <p className="text-xs text-gray-600 mt-1">
-                                            {job.deliveryTypeName}
-                                          </p>
-                                          <div className="flex items-center gap-1 mt-1">
-                                            <Calendar className="h-3 w-3 text-gray-400" />
-                                            <p className="text-xs text-gray-500">
-                                              {job.requestedDate ? format(new Date(job.requestedDate), 'MMM d, yyyy') : 'N/A'}
-                                            </p>
-                                          </div>
-                                        </div>
-                                        <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                                          {job.sqm && (
-                                            <Badge variant="outline" className="text-xs">
-                                              {job.sqm.toLocaleString()}m²
-                                            </Badge>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </button>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </ScrollArea>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
-                    <Button variant="ghost" size="icon" onClick={goToPreviousDay}>
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <div className="flex items-center gap-2 px-3">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="border-none bg-transparent text-sm font-medium focus:outline-none"
-                      />
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={goToNextDay}>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={goToToday}>
-                    Today
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
+                  <Button variant="ghost" size="icon" onClick={goToPreviousDay}>
+                    <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" onClick={() => setCreateJobOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Create Job</span>
+                  <div className="flex items-center gap-2 px-3">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="border-none bg-transparent text-sm font-medium focus:outline-none"
+                    />
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={goToNextDay}>
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
+                <Button variant="outline" size="sm" onClick={goToToday}>
+                  Today
+                </Button>
+                <Button size="sm" onClick={() => setCreateJobOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Create Job</span>
+                </Button>
               </div>
             </div>
-
-            {loading ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              </div>
-            ) : (
-              <div className="flex-1 overflow-auto">
-                
-                <SchedulerGrid
-                  trucks={TRUCKS}
-                  timeSlots={TIME_SLOTS}
-                  jobs={jobs}
-                  assignments={assignments}
-                  placeholders={placeholders}
-                  selectedDate={selectedDate}
-                  deliveryTypes={deliveryTypes}
-                  dragDropEnabled={true}
-                  onOpenPlaceholderDialog={handleOpenPlaceholderDialog}
-                  onJobClick={handleJobClick}
-                />
-              </div>
-            )}
           </div>
-        </DragDropContext>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="pb-8">
+              <SchedulerGrid
+                trucks={TRUCKS}
+                timeSlots={TIME_SLOTS}
+                jobs={jobs}
+                assignments={assignments}
+                placeholders={placeholders}
+                selectedDate={selectedDate}
+                deliveryTypes={deliveryTypes}
+                dragDropEnabled={true}
+                onOpenPlaceholderDialog={handleOpenPlaceholderDialog}
+                onJobClick={handleJobClick}
+              />
+            </div>
+          )}
+        </div>
+      </DragDropContext>
 
       <CreateJobForm 
         open={isCreateJobOpen}
