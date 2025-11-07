@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
@@ -359,8 +358,8 @@ export default function SchedulingBoard() {
   if (isMobile) {
     return (
       <>
-        <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
-          <div className="bg-white border-b px-4 py-4 flex-shrink-0 sticky top-0 z-10 shadow-sm">
+        <div className="min-h-screen bg-gray-50 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="bg-white border-b px-4 py-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-xl font-bold text-gray-900">Scheduling Board</h1>
               <Button
@@ -406,13 +405,12 @@ export default function SchedulingBoard() {
           </div>
 
           {loading ? (
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex items-center justify-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto px-4 pt-4">
-              <div className="space-y-4 pb-24">
-                {allUnscheduledJobs.length > 0 && (
+            <div className="px-4 py-4 pb-24">
+              {allUnscheduledJobs.length > 0 && (
                   <Card className="bg-yellow-50 border-yellow-200">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center justify-between">
@@ -604,7 +602,6 @@ export default function SchedulingBoard() {
                     </Card>
                   );
                 })}
-              </div>
             </div>
           )}
         </div>
