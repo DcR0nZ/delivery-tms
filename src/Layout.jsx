@@ -10,7 +10,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Toaster } from '@/components/ui/toaster'; // Added Toaster import
+import { Toaster } from '@/components/ui/toaster';
 import {
   LogOut,
   Menu,
@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 
 import ChatWidget from './components/chat/ChatWidget';
+import NotificationBell from './components/NotificationBell';
 import { OfflineProvider } from './components/offline/OfflineManager';
 
 const NavLink = ({ to, icon: Icon, children, collapsed, onClick }) => {
@@ -316,7 +317,6 @@ export default function Layout({ children, currentPageName }) {
           return;
         }
 
-        // Redirect to appropriate dashboard on first load (root path or login callback)
         const isRootPath = location.pathname === '/' || location.pathname === '/app';
         const isLoginCallback = location.search.includes('code=') || location.search.includes('state=');
         
@@ -336,7 +336,6 @@ export default function Layout({ children, currentPageName }) {
           } else if (currentUser.appRole === 'outreach' || currentUser.appRole === 'outreachOperator') {
             dashboardUrl = createPageUrl('Dashboard');
           } else {
-            // Default fallback
             dashboardUrl = createPageUrl('DailyJobBoard');
           }
           
@@ -395,7 +394,6 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
-  // Show loading spinner
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -407,7 +405,6 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  // Show error if authentication failed or user object is unexpectedly null after loading
   if (error || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -459,7 +456,6 @@ export default function Layout({ children, currentPageName }) {
           padding: 0;
         }
         
-        /* Fix for Google Places Autocomplete dropdown - MAXIMUM z-index */
         .pac-container {
           z-index: 999999 !important;
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
@@ -495,7 +491,6 @@ export default function Layout({ children, currentPageName }) {
           color: #111827 !important;
         }
         
-        /* Ensure autocomplete dropdown clicks are not blocked */
         .pac-container * {
           pointer-events: auto !important;
         }
@@ -606,7 +601,14 @@ export default function Layout({ children, currentPageName }) {
               <span className="font-semibold text-lg">{getSidebarTitle()}</span>
             </div>
 
-            <div className="w-10"></div>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+            </div>
+          </div>
+
+          {/* Desktop header with notification bell */}
+          <div className="hidden md:flex items-center justify-end px-6 py-3 bg-white border-b">
+            <NotificationBell />
           </div>
 
           <main className="flex-1 overflow-y-auto p-6">
