@@ -113,15 +113,15 @@ export default function CustomerRequestDeliveryPage() {
         properties: {
           deliveryLocation: { 
             type: "string", 
-            description: "The full delivery address including street, suburb, state and postcode" 
+            description: "The full delivery address including street, suburb, state and postcode (DO NOT include company/customer name)" 
           },
           poSalesDocketNumber: { 
             type: "string", 
             description: "Purchase order number, sales order number, docket number, or invoice number" 
           },
-          totalUnits: { 
+          totalSheetQty: { 
             type: "number", 
-            description: "Total number of units, items, or dockets if specified" 
+            description: "Total quantity of plasterboard/drywall SHEETS. Look for 'sheets', 'units', 'qty' on the docket. This is the NUMBER OF SHEETS, not dwelling units." 
           },
           sqm: { 
             type: "number", 
@@ -164,6 +164,16 @@ export default function CustomerRequestDeliveryPage() {
         
         const extracted = result.output;
         const updates = {};
+        
+        let deliveryNotesForUpdate = [];
+        let totalUnitsFromExtraction = null;
+        
+        // Determine if the current delivery type selected in the form is a 'unit' type
+        const selectedTypeInForm = deliveryTypes.find(t => t.id === formData.deliveryTypeId);
+        const isCurrentlyUnitDeliveryType = selectedTypeInForm?.name?.toLowerCase().includes('unit') || 
+                                            selectedTypeInForm?.code === 'UNITDWN' || 
+                                            selectedTypeInForm?.code === 'UNITUP' ||
+                                            selectedTypeInForm?.name?.toLowerCase().includes('crane');
 
         if (extracted.pickupLocation) {
           const matchedLocation = pickupLocations.find(loc =>
@@ -182,12 +192,36 @@ export default function CustomerRequestDeliveryPage() {
           // Geocoding will happen when user accepts the extracted address
         }
         if (extracted.poSalesDocketNumber) updates.poSalesDocketNumber = extracted.poSalesDocketNumber;
-        if (extracted.totalUnits) updates.totalUnits = String(extracted.totalUnits);
+        
+        // Handle totalSheetQty intelligently based on delivery type
+        if (extracted.totalSheetQty !== undefined && extracted.totalSheetQty !== null) {
+          if (isCurrentlyUnitDeliveryType) {
+            // For unit delivery types, totalSheetQty represents number of units/dwellings
+            totalUnitsFromExtraction = String(extracted.totalSheetQty);
+          } else {
+            // For all other delivery types, this represents total sheets
+            deliveryNotesForUpdate.push(`Total sheets: ${extracted.totalSheetQty}`);
+          }
+        }
+
+        if (totalUnitsFromExtraction !== null) {
+          updates.totalUnits = totalUnitsFromExtraction;
+        }
+        
         if (extracted.sqm) updates.sqm = String(extracted.sqm);
         if (extracted.weightKg) updates.weightKg = String(extracted.weightKg);
         if (extracted.siteContactName) updates.siteContactName = extracted.siteContactName;
         if (extracted.siteContactPhone) updates.siteContactPhone = extracted.siteContactPhone;
-        if (extracted.deliveryNotes) updates.deliveryNotes = extracted.deliveryNotes;
+
+        // Add extracted deliveryNotes to the list if present
+        if (extracted.deliveryNotes) {
+            deliveryNotesForUpdate.push(extracted.deliveryNotes);
+        }
+
+        // Combine all delivery notes parts
+        if (deliveryNotesForUpdate.length > 0) {
+            updates.deliveryNotes = deliveryNotesForUpdate.join('\n');
+        }
         
         if (extracted.requestedDate) {
           try {
