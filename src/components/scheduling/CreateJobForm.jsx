@@ -44,6 +44,7 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
     deliveryLongitude: null,
     requestedDate: '',
     totalUnits: '',
+    totalSheetQty: '',
     poSalesDocketNumber: '',
     deliveryWindow: '',
     sqm: '',
@@ -351,6 +352,7 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
         deliveryLongitude: formData.deliveryLongitude,
         requestedDate: formData.requestedDate,
         totalUnits: formData.totalUnits ? Number(formData.totalUnits) : undefined,
+        totalSheetQty: formData.totalSheetQty ? Number(formData.totalSheetQty) : undefined,
         poSalesDocketNumber: docketInfo,
         deliveryWindow: formData.deliveryWindow || undefined,
         sqm: formData.sqm ? Number(formData.sqm) : undefined,
@@ -455,7 +457,7 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
         customerId: '', deliveryTypeId: '', pickupLocationId: '', deliveryLocation: '', 
         deliveryLatitude: null, deliveryLongitude: null,
         requestedDate: '', 
-        totalUnits: '', poSalesDocketNumber: '', deliveryWindow: '',
+        totalUnits: '', totalSheetQty: '', poSalesDocketNumber: '', deliveryWindow: '',
         sqm: '', weightKg: '', siteContactName: '', siteContactPhone: '', deliveryNotes: '',
         scheduleTruckId: '', scheduleDate: '', scheduleTimeSlot: '', scheduleSlotPosition: '1',
         nonStandardDelivery: {
@@ -526,17 +528,34 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
                 </div>
 
                 {isUnitsDelivery && (
-                  <div>
-                    <label htmlFor="totalUnits" className="block text-sm font-medium text-gray-700 mb-1">Number of Dockets/Units</label>
-                    <Input id="totalUnits" name="totalUnits" type="number" value={formData.totalUnits} onChange={handleChange} placeholder="e.g. 8" />
-                  </div>
+                  <>
+                    <div>
+                      <label htmlFor="totalUnits" className="block text-sm font-medium text-gray-700 mb-1">Number of Dockets</label>
+                      <Input id="totalUnits" name="totalUnits" type="number" value={formData.totalUnits} onChange={handleChange} placeholder="e.g. 3" />
+                      <p className="text-xs text-gray-500 mt-1">How many separate dockets/orders</p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="totalSheetQty" className="block text-sm font-medium text-gray-700 mb-1">Total Sheet Quantity</label>
+                      <Input id="totalSheetQty" name="totalSheetQty" type="number" value={formData.totalSheetQty} onChange={handleChange} placeholder="e.g. 98" />
+                      <p className="text-xs text-gray-500 mt-1">Total number of sheets across all dockets</p>
+                    </div>
+                  </>
                 )}
 
                 {formData.deliveryTypeId && !isUnitsDelivery && (
-                  <div>
-                    <label htmlFor="poSalesDocketNumber" className="block text-sm font-medium text-gray-700 mb-1">PO/Docket Number</label>
-                    <Input id="poSalesDocketNumber" name="poSalesDocketNumber" value={formData.poSalesDocketNumber} onChange={handleChange} placeholder="e.g., PO12345 or DOC789" />
-                  </div>
+                  <>
+                    <div>
+                      <label htmlFor="poSalesDocketNumber" className="block text-sm font-medium text-gray-700 mb-1">PO/Docket Number</label>
+                      <Input id="poSalesDocketNumber" name="poSalesDocketNumber" value={formData.poSalesDocketNumber} onChange={handleChange} placeholder="e.g., PO12345 or DOC789" />
+                    </div>
+
+                    <div>
+                      <label htmlFor="totalSheetQty" className="block text-sm font-medium text-gray-700 mb-1">Total Sheet Quantity</label>
+                      <Input id="totalSheetQty" name="totalSheetQty" type="number" value={formData.totalSheetQty} onChange={handleChange} placeholder="e.g. 98" />
+                      <p className="text-xs text-gray-500 mt-1">Total number of sheets</p>
+                    </div>
+                  </>
                 )}
 
                 <div>
