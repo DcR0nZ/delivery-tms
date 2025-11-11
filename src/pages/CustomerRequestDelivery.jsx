@@ -28,7 +28,6 @@ export default function CustomerRequestDeliveryPage() {
     deliveryLongitude: null,
     requestedDate: '',
     totalUnits: '',
-    totalSheetQty: '', // Added totalSheetQty to formData
     poSalesDocketNumber: '',
     deliveryWindow: '',
     sqm: '',
@@ -114,15 +113,15 @@ export default function CustomerRequestDeliveryPage() {
         properties: {
           deliveryLocation: { 
             type: "string", 
-            description: "The full delivery address including street, suburb, state and postcode (DO NOT include company/customer name)" 
+            description: "The full delivery address including street, suburb, state and postcode" 
           },
           poSalesDocketNumber: { 
             type: "string", 
             description: "Purchase order number, sales order number, docket number, or invoice number" 
           },
-          totalSheetQty: { 
+          totalUnits: { 
             type: "number", 
-            description: "Total quantity of plasterboard/drywall SHEETS. Look for 'sheets', 'units', 'qty' on the docket. This is the NUMBER OF SHEETS, not dwelling units." 
+            description: "Total number of units, items, or dockets if specified" 
           },
           sqm: { 
             type: "number", 
@@ -165,13 +164,6 @@ export default function CustomerRequestDeliveryPage() {
         
         const extracted = result.output;
         const updates = {};
-        
-        // Determine if the current delivery type selected in the form is a 'unit' type
-        const selectedTypeInForm = deliveryTypes.find(t => t.id === formData.deliveryTypeId);
-        const isCurrentlyUnitDeliveryType = selectedTypeInForm?.name?.toLowerCase().includes('unit') || 
-                                            selectedTypeInForm?.code === 'UNITDWN' || 
-                                            selectedTypeInForm?.code === 'UNITUP' ||
-                                            selectedTypeInForm?.name?.toLowerCase().includes('crane');
 
         if (extracted.pickupLocation) {
           const matchedLocation = pickupLocations.find(loc =>
@@ -190,27 +182,12 @@ export default function CustomerRequestDeliveryPage() {
           // Geocoding will happen when user accepts the extracted address
         }
         if (extracted.poSalesDocketNumber) updates.poSalesDocketNumber = extracted.poSalesDocketNumber;
-        
-        // Handle totalSheetQty intelligently based on delivery type
-        if (extracted.totalSheetQty !== undefined && extracted.totalSheetQty !== null) {
-          if (isCurrentlyUnitDeliveryType) {
-            // For unit delivery types, totalSheetQty represents number of units/dwellings
-            updates.totalUnits = String(extracted.totalSheetQty);
-          } else {
-            // For all other delivery types, this represents total sheets
-            updates.totalSheetQty = String(extracted.totalSheetQty);
-          }
-        }
-
+        if (extracted.totalUnits) updates.totalUnits = String(extracted.totalUnits);
         if (extracted.sqm) updates.sqm = String(extracted.sqm);
         if (extracted.weightKg) updates.weightKg = String(extracted.weightKg);
         if (extracted.siteContactName) updates.siteContactName = extracted.siteContactName;
         if (extracted.siteContactPhone) updates.siteContactPhone = extracted.siteContactPhone;
-
-        // Apply extracted delivery notes
-        if (extracted.deliveryNotes) {
-            updates.deliveryNotes = extracted.deliveryNotes;
-        }
+        if (extracted.deliveryNotes) updates.deliveryNotes = extracted.deliveryNotes;
         
         if (extracted.requestedDate) {
           try {
@@ -374,7 +351,6 @@ export default function CustomerRequestDeliveryPage() {
         deliveryLongitude: formData.deliveryLongitude,
         requestedDate: formData.requestedDate,
         totalUnits: formData.totalUnits ? Number(formData.totalUnits) : undefined,
-        totalSheetQty: formData.totalSheetQty ? Number(formData.totalSheetQty) : undefined, // Added to job creation
         poSalesDocketNumber: formData.poSalesDocketNumber || undefined,
         deliveryWindow: formData.deliveryWindow || undefined,
         sqm: formData.sqm ? Number(formData.sqm) : undefined,
@@ -408,7 +384,7 @@ export default function CustomerRequestDeliveryPage() {
         deliveryTypeId: '', pickupLocationId: '', deliveryLocation: '', 
         deliveryLatitude: null, deliveryLongitude: null,
         requestedDate: '', 
-        totalUnits: '', totalSheetQty: '', poSalesDocketNumber: '', deliveryWindow: '', // Added to reset
+        totalUnits: '', poSalesDocketNumber: '', deliveryWindow: '',
         sqm: '', weightKg: '', siteContactName: '', siteContactPhone: '', deliveryNotes: '',
         nonStandardDelivery: {
           longWalk: false, longWalkDistance: '', passUp: false, passDown: false, stairs: false,
@@ -548,14 +524,6 @@ export default function CustomerRequestDeliveryPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Total Number of Units</label>
                   <Input name="totalUnits" type="number" value={formData.totalUnits} onChange={handleChange} placeholder="e.g., 150" />
-                </div>
-              )}
-
-              {/* Added totalSheetQty input field */}
-              {!isUnitsDelivery && formData.deliveryTypeId && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Sheet Quantity</label>
-                  <Input name="totalSheetQty" type="number" value={formData.totalSheetQty} onChange={handleChange} placeholder="e.g., 98" />
                 </div>
               )}
 
