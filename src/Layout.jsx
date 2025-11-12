@@ -34,7 +34,6 @@ import {
 } from 'lucide-react';
 
 import ChatWidget from './components/chat/ChatWidget';
-import NotificationBell from './components/NotificationBell';
 import { OfflineProvider } from './components/offline/OfflineManager';
 
 const NavLink = ({ to, icon: Icon, children, collapsed, onClick }) => {
@@ -600,15 +599,11 @@ export default function Layout({ children, currentPageName }) {
               <Truck className="h-6 w-6 text-blue-600" />
               <span className="font-semibold text-lg">{getSidebarTitle()}</span>
             </div>
-
-            <div className="flex items-center gap-2">
-              <NotificationBell />
-            </div>
           </div>
 
           {/* Desktop header with notification bell */}
           <div className="hidden md:flex items-center justify-end px-6 py-3 bg-white border-b">
-            <NotificationBell />
+            {/* NotificationBell was here */}
           </div>
 
           <main className="flex-1 overflow-y-auto p-6">
