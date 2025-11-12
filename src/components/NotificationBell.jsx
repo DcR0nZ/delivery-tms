@@ -143,7 +143,7 @@ export default function NotificationBell() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-96 max-w-[calc(100vw-2rem)]">
+      <DropdownMenuContent align="end" className="w-[450px] max-w-[95vw]">
         <div className="p-3 border-b flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-sm">Notifications</h3>
@@ -188,7 +188,7 @@ export default function NotificationBell() {
                           {notification.title}
                         </p>
                       )}
-                      <p className={`text-sm ${notification.isRead ? 'text-gray-600' : 'text-gray-900'}`}>
+                      <p className={`text-sm ${notification.isRead ? 'text-gray-600' : 'text-gray-900'} break-words`}>
                         {notification.message}
                       </p>
                       <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
