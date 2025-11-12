@@ -354,6 +354,9 @@ export default function SchedulingBoard() {
     );
   }
 
+  // Check if user can see notifications (admin or dispatcher only)
+  const canSeeNotifications = currentUser.role === 'admin' || currentUser.appRole === 'dispatcher';
+
   // MOBILE VIEW
   if (isMobile) {
     return (
@@ -362,21 +365,23 @@ export default function SchedulingBoard() {
           <div className="bg-white border-b px-4 py-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-xl font-bold text-gray-900">Scheduling Board</h1>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setNotificationOpen(true)}
-                className="h-8 w-8 p-0"
-              >
-                <div className="relative">
-                  <Bell className="h-5 w-5" />
-                  {unreadNotifications.length > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold text-white">
-                      {unreadNotifications.length}
-                    </span>
-                  )}
-                </div>
-              </Button>
+              {canSeeNotifications && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setNotificationOpen(true)}
+                  className="h-8 w-8 p-0"
+                >
+                  <div className="relative">
+                    <Bell className="h-5 w-5" />
+                    {unreadNotifications.length > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold text-white">
+                        {unreadNotifications.length}
+                      </span>
+                    )}
+                  </div>
+                </Button>
+              )}
             </div>
 
             <div className="flex items-center justify-between gap-2">
@@ -644,127 +649,196 @@ export default function SchedulingBoard() {
                   <p className="text-sm md:text-base text-gray-600 mt-1">Drag jobs to schedule them in time slots</p>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
-                  {/* Notification Dropdown */}
-                  <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        className="relative"
-                      >
-                        <Bell 
-                          className={`h-5 w-5 ${unreadNotifications.length > 0 ? 'fill-red-500 text-red-500' : ''}`}
-                        />
-                        {unreadNotifications.length > 0 && (
-                          <Badge 
-                            className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs"
-                          >
-                            {unreadNotifications.length}
-                          </Badge>
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-80">
-                      <div className="p-3 border-b">
-                        <h3 className="font-semibold text-sm">Notifications</h3>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {unreadNotifications.length} unread notification{unreadNotifications.length !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                      <ScrollArea className="h-[400px]">
-                        {unreadNotifications.length === 0 && readNotifications.length === 0 ? (
-                          <div className="p-4 text-center text-sm text-gray-500">
-                            No notifications
-                          </div>
-                        ) : (
-                          <div className="flex flex-col">
-                            {/* Unread Section */}
-                            {unreadNotifications.length > 0 && (
-                              <div className="p-2">
-                                <div className="px-2 py-1 text-xs font-semibold text-gray-700 uppercase">
-                                  Unread
-                                </div>
-                                {unreadNotifications.map(job => (
-                                  <button
-                                    key={job.id}
-                                    onClick={() => handleJobFromNotification(job)}
-                                    className="w-full p-3 mb-2 text-left hover:bg-gray-50 rounded-lg border-2 border-blue-200 bg-blue-50 transition-colors"
-                                  >
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm text-gray-900 truncate">
-                                          {job.customerName}
-                                        </p>
-                                        <p className="text-xs text-gray-600 mt-1">
-                                          {job.deliveryTypeName}
-                                        </p>
-                                        <div className="flex items-center gap-1 mt-1">
-                                          <Calendar className="h-3 w-3 text-gray-400" />
-                                          <p className="text-xs text-gray-500">
-                                            {job.requestedDate ? format(new Date(job.requestedDate), 'MMM d, yyyy') : 'N/A'}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                                        {job.sqm && (
-                                          <Badge variant="outline" className="text-xs">
-                                            {job.sqm.toLocaleString()}m²
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Read Section */}
-                            {readNotifications.length > 0 && (
-                              <>
-                                {unreadNotifications.length > 0 && <DropdownMenuSeparator />}
+                  {/* Notification Dropdown - Only for admins and dispatchers */}
+                  {canSeeNotifications && (
+                    <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          className="relative"
+                        >
+                          <Bell 
+                            className={`h-5 w-5 ${unreadNotifications.length > 0 ? 'fill-red-500 text-red-500' : ''}`}
+                          />
+                          {unreadNotifications.length > 0 && (
+                            <Badge 
+                              className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs"
+                            >
+                              {unreadNotifications.length}
+                            </Badge>
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-[500px] max-w-[90vw]">
+                        <div className="p-3 border-b">
+                          <h3 className="font-semibold text-sm">Unscheduled Jobs</h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {unreadNotifications.length} job{unreadNotifications.length !== 1 ? 's' : ''} need{unreadNotifications.length === 1 ? 's' : ''} scheduling
+                          </p>
+                        </div>
+                        <ScrollArea className="h-[400px]">
+                          {unreadNotifications.length === 0 && readNotifications.length === 0 ? (
+                            <div className="p-4 text-center text-sm text-gray-500">
+                              All jobs are scheduled! 🎉
+                            </div>
+                          ) : (
+                            <div className="flex flex-col">
+                              {/* Unread Section */}
+                              {unreadNotifications.length > 0 && (
                                 <div className="p-2">
-                                  <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase">
-                                    Read
+                                  <div className="px-2 py-1 text-xs font-semibold text-gray-700 uppercase">
+                                    New Unscheduled Jobs
                                   </div>
-                                  {readNotifications.map(job => (
-                                    <button
-                                      key={job.id}
-                                      onClick={() => handleJobFromNotification(job)}
-                                      className="w-full p-3 mb-2 text-left hover:bg-gray-50 rounded-lg border border-gray-200 bg-white opacity-60 transition-colors"
-                                    >
-                                      <div className="flex items-start justify-between gap-2">
-                                        <div className="flex-1 min-w-0">
-                                          <p className="font-medium text-sm text-gray-900 truncate">
-                                            {job.customerName}
-                                          </p>
-                                          <p className="text-xs text-gray-600 mt-1">
-                                            {job.deliveryTypeName}
-                                          </p>
-                                          <div className="flex items-center gap-1 mt-1">
-                                            <Calendar className="h-3 w-3 text-gray-400" />
-                                            <p className="text-xs text-gray-500">
-                                              {job.requestedDate ? format(new Date(job.requestedDate), 'MMM d, yyyy') : 'N/A'}
+                                  {unreadNotifications.map(job => {
+                                    const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
+                                    const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
+                                    const pickupShortname = pickupLocation?.shortname;
+                                    const cardStyles = getJobCardInlineStyles(deliveryType, job);
+                                    const badgeStyles = getBadgeStyles(getJobCardStyles(deliveryType, job));
+                                    const textStyles = getJobCardStyles(deliveryType, job);
+
+                                    return (
+                                      <button
+                                        key={job.id}
+                                        onClick={() => handleJobFromNotification(job)}
+                                        className="w-full p-3 mb-2 text-left hover:opacity-80 rounded-lg border-2 transition-colors"
+                                        style={{
+                                          ...cardStyles,
+                                          boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.1)'
+                                        }}
+                                      >
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="flex-1 min-w-0">
+                                            {(deliveryType?.code || pickupShortname) && (
+                                              <div className="mb-1 flex gap-1 flex-wrap">
+                                                {deliveryType?.code && (
+                                                  <span 
+                                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm"
+                                                    style={badgeStyles}
+                                                  >
+                                                    {textStyles.icon && <span className="text-sm">{textStyles.icon}</span>}
+                                                    {deliveryType.code}
+                                                  </span>
+                                                )}
+                                                {pickupShortname && (
+                                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
+                                                    {pickupShortname}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+                                            <p className="font-medium text-sm text-gray-900 truncate">
+                                              {job.customerName}
                                             </p>
+                                            <p className="text-xs text-gray-600 mt-1">
+                                              {job.deliveryTypeName}
+                                            </p>
+                                            <p className="text-xs text-gray-600 truncate">
+                                              {job.deliveryLocation}
+                                            </p>
+                                            <div className="flex items-center gap-1 mt-1">
+                                              <Calendar className="h-3 w-3 text-gray-400" />
+                                              <p className="text-xs text-gray-500">
+                                                {job.requestedDate ? format(new Date(job.requestedDate), 'MMM d, yyyy') : 'N/A'}
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                                            {job.sqm && (
+                                              <Badge variant="outline" className="text-xs bg-white/90 text-gray-900">
+                                                {job.sqm.toLocaleString()}m²
+                                              </Badge>
+                                            )}
+                                            {job.isDifficultDelivery && (
+                                              <AlertTriangle className="h-4 w-4 text-orange-500" />
+                                            )}
                                           </div>
                                         </div>
-                                        <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                                          {job.sqm && (
-                                            <Badge variant="outline" className="text-xs">
-                                              {job.sqm.toLocaleString()}m²
-                                            </Badge>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </button>
-                                  ))}
+                                      </button>
+                                    );
+                                  })}
                                 </div>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </ScrollArea>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                              )}
+
+                              {/* Read Section */}
+                              {readNotifications.length > 0 && (
+                                <>
+                                  {unreadNotifications.length > 0 && <DropdownMenuSeparator />}
+                                  <div className="p-2">
+                                    <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase">
+                                      Previously Viewed
+                                    </div>
+                                    {readNotifications.map(job => {
+                                      const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
+                                      const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
+                                      const pickupShortname = pickupLocation?.shortname;
+                                      const cardStyles = getJobCardInlineStyles(deliveryType, job);
+                                      const badgeStyles = getBadgeStyles(getJobCardStyles(deliveryType, job));
+                                      const textStyles = getJobCardStyles(deliveryType, job);
+
+                                      return (
+                                        <button
+                                          key={job.id}
+                                          onClick={() => handleJobFromNotification(job)}
+                                          className="w-full p-3 mb-2 text-left hover:bg-gray-50 rounded-lg border border-gray-200 bg-white opacity-60 transition-colors"
+                                        >
+                                          <div className="flex items-start justify-between gap-2">
+                                            <div className="flex-1 min-w-0">
+                                              {(deliveryType?.code || pickupShortname) && (
+                                                <div className="mb-1 flex gap-1 flex-wrap">
+                                                  {deliveryType?.code && (
+                                                    <span 
+                                                      className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm"
+                                                      style={badgeStyles}
+                                                    >
+                                                      {textStyles.icon && <span className="text-sm">{textStyles.icon}</span>}
+                                                      {deliveryType.code}
+                                                    </span>
+                                                  )}
+                                                  {pickupShortname && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
+                                                      {pickupShortname}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              )}
+                                              <p className="font-medium text-sm text-gray-900 truncate">
+                                                {job.customerName}
+                                              </p>
+                                              <p className="text-xs text-gray-600 mt-1">
+                                                {job.deliveryTypeName}
+                                              </p>
+                                              <p className="text-xs text-gray-600 truncate">
+                                                {job.deliveryLocation}
+                                              </p>
+                                              <div className="flex items-center gap-1 mt-1">
+                                                <Calendar className="h-3 w-3 text-gray-400" />
+                                                <p className="text-xs text-gray-500">
+                                                  {job.requestedDate ? format(new Date(job.requestedDate), 'MMM d, yyyy') : 'N/A'}
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                                              {job.sqm && (
+                                                <Badge variant="outline" className="text-xs">
+                                                  {job.sqm.toLocaleString()}m²
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </ScrollArea>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
 
                   <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
                     <Button variant="ghost" size="icon" onClick={goToPreviousDay}>
