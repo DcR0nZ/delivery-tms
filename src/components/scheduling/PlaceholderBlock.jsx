@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -73,13 +74,13 @@ export default function PlaceholderBlock({ placeholder, onUpdated }) {
   return (
     <>
       <div
-        className={`${colorOption.bg} ${colorOption.border} border-2 rounded shadow-sm text-xs transition-all group relative flex items-center justify-center`}
+        className={`${colorOption.bg} ${colorOption.border} border-2 rounded p-2 shadow-sm text-xs transition-all group relative`}
         style={{
-          width: '120px',
-          height: '146px'
+          minHeight: '60px',
+          width: '100%'
         }}
       >
-        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
           <Button
             size="icon"
             variant="ghost"
@@ -97,7 +98,7 @@ export default function PlaceholderBlock({ placeholder, onUpdated }) {
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
-        <div className={`font-medium ${colorOption.text} text-[11px] text-center px-2`}>
+        <div className={`font-medium ${colorOption.text} text-[11px] pr-12`}>
           {placeholder.label}
         </div>
       </div>

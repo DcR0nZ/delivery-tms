@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { Badge } from '@/components/ui/badge';
@@ -22,13 +23,15 @@ const TIME_SLOTS = [
 const parseAddress = (address) => {
   if (!address) return { unit: '', street: '', suburb: '' };
   
-  const parts = address.split(',').map(p => p.trim()).filter(Boolean);
+  // Split by comma
+  const parts = address.split(',').map(p => p.trim()).filter(Boolean); // Filter out empty strings
   
   let unit = '';
   let street = '';
   let suburb = '';
   
   if (parts.length >= 3) {
+    // Check if first part looks like a unit/lot (contains "Unit", "Lot", "U" followed by number, or starts with number/letter)
     const firstPart = parts[0];
     if (/^(Unit|Lot|U|L)\s*\d+/i.test(firstPart) || /^\d+[A-Z]?$/i.test(firstPart)) {
       unit = firstPart;
@@ -45,45 +48,24 @@ const parseAddress = (address) => {
     street = parts[0];
   }
   
+  // Filter out QLD, Queensland, and Australia from suburb UNLESS it contains NSW
   if (suburb) {
     const hasNSW = /NSW|New South Wales/i.test(suburb);
     
     if (!hasNSW) {
+      // Remove QLD, Queensland, Australia, and extra whitespace
       suburb = suburb
         .replace(/,?\s*(QLD|Queensland|Australia)\s*/gi, '')
-        .replace(/\s+/g, ' ')
+        .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
         .trim()
-        .replace(/,\s*$/, '');
+        .replace(/,\s*$/, ''); // Remove trailing comma if it's the last character after removal
     }
   }
   
   return { unit, street, suburb };
 };
 
-// Parse address for mini card (street/lot number + street name + suburb only)
-const parseMiniAddress = (address) => {
-  const parts = parseAddress(address);
-  
-  // Extract just the street number/lot from street
-  let streetNum = '';
-  if (parts.street) {
-    const match = parts.street.match(/^(\d+[A-Z]?)\s+/);
-    if (match) {
-      streetNum = match[1];
-    }
-  }
-  
-  // Get street name (without number)
-  const streetName = parts.street ? parts.street.replace(/^\d+[A-Z]?\s+/, '').trim() : '';
-  
-  return {
-    streetNum: parts.unit || streetNum,
-    streetName,
-    suburb: parts.suburb
-  };
-};
-
-const JobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLocations, isMini = false, onAddPlaceholder }) => {
+const JobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLocations }) => {
   const isLargeJob = job.sqm > 2000;
   const deliveryType = deliveryTypes?.find((dt) => dt.id === job.deliveryTypeId);
   const cardStyles = getJobCardInlineStyles(deliveryType, job);
@@ -91,26 +73,25 @@ const JobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLocations, is
   
   const isUnitDelivery = deliveryType?.code && ['UNITUP', 'UNITDWN', 'CRANE'].includes(deliveryType.code);
   const hasPodNotes = job.podNotes && job.podNotes.trim().length > 0;
-  const addressParts = isMini ? parseMiniAddress(job.deliveryLocation) : parseAddress(job.deliveryLocation);
+  const addressParts = parseAddress(job.deliveryLocation);
   
   const pickupLocation = pickupLocations?.find(loc => loc.id === job.pickupLocationId);
   const pickupShortname = pickupLocation?.shortname;
 
   const jobCard = (
     <div
-      className={`relative w-full h-full border-2 rounded p-2 text-xs cursor-pointer transition-all overflow-hidden ${
+      className={`w-full h-full border-2 rounded p-2 text-xs cursor-pointer transition-all overflow-hidden ${
         isDragging ? 'opacity-50 scale-105 z-50' : ''
       }`}
       style={{
         ...cardStyles,
-        backgroundColor: cardStyles['--card-color-rgb'] ? `rgba(${cardStyles['--card-color-rgb']}, 0.75)` : cardStyles.backgroundColor,
         boxShadow: isDragging ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
       }}
       onMouseEnter={(e) => {
         if (!isDragging) {
           const rgb = cardStyles['--card-color-rgb'];
           if (rgb) {
-            e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.85)`;
+            e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.10)`;
             e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
           }
         }
@@ -119,28 +100,26 @@ const JobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLocations, is
         if (!isDragging) {
           const rgb = cardStyles['--card-color-rgb'];
           if (rgb) {
-            e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.75)`;
+            e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.06)`;
             e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
           }
+        }
+      }}
+      onMouseDown={(e) => {
+        const rgb = cardStyles['--card-color-rgb'];
+        if (rgb) {
+          e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.08)`;
+        }
+      }}
+      onMouseUp={(e) => {
+        const rgb = cardStyles['--card-color-rgb'];
+        if (rgb) {
+          e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.10)`;
         }
       }}
       onClick={onClick}
       aria-label={`${textStyles.name} delivery for ${job.customerName}`}
     >
-      {/* Left Placeholder Button */}
-      {onAddPlaceholder && !isMini && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddPlaceholder('left');
-          }}
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 border-2 border-gray-400 rounded-full p-0.5 z-30 shadow-md"
-          style={{ width: '20px', height: '20px' }}
-        >
-          <Plus className="h-3 w-3 text-gray-700" />
-        </button>
-      )}
-
       <div className="flex items-start justify-between gap-1 h-full">
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="flex items-center gap-1 mb-1 flex-wrap">
@@ -153,45 +132,39 @@ const JobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLocations, is
                 {deliveryType.code}
               </span>
             )}
-            {pickupShortname && !isMini && (
+            {pickupShortname && (
               <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-purple-100 text-purple-700">
                 {pickupShortname}
               </span>
             )}
-            {job.sqm && !isMini && (
+            {job.sqm && (
               <span className="bg-white/80 text-gray-900 px-1 py-0.5 font-bold rounded text-[9px] shadow-sm">
                 {job.sqm.toLocaleString()}m²
               </span>
             )}
-            {job.weightKg && !isMini && (
+            {job.weightKg && (
               <span className="bg-white/80 text-gray-900 px-1 py-0.5 font-bold rounded text-[9px] shadow-sm">
                 {(job.weightKg / 1000).toFixed(1)}t
               </span>
             )}
-            {isUnitDelivery && job.totalUnits && !isMini && (
+            {isUnitDelivery && job.totalUnits && (
               <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-indigo-100 text-indigo-700">
                 {job.totalUnits} units
               </span>
             )}
           </div>
 
-          <div className="font-semibold truncate text-sm mb-0.5 text-gray-900">
+          <div 
+            className="font-semibold truncate text-sm mb-0.5 text-gray-900"
+          >
             {job.customerName}
           </div>
-          <div className="text-[11px] leading-tight text-gray-700">
-            {isMini ? (
-              <>
-                {addressParts.streetNum && <div className="truncate">{addressParts.streetNum}</div>}
-                {addressParts.streetName && <div className="truncate">{addressParts.streetName}</div>}
-                {addressParts.suburb && <div className="truncate">{addressParts.suburb}</div>}
-              </>
-            ) : (
-              <>
-                {addressParts.unit && <div className="truncate">{addressParts.unit}</div>}
-                {addressParts.street && <div className="truncate">{addressParts.street}</div>}
-                {addressParts.suburb && <div className="truncate">{addressParts.suburb}</div>}
-              </>
-            )}
+          <div 
+            className="text-[11px] leading-tight text-gray-700"
+          >
+            {addressParts.unit && <div className="truncate">{addressParts.unit}</div>}
+            {addressParts.street && <div className="truncate">{addressParts.street}</div>}
+            {addressParts.suburb && <div className="truncate">{addressParts.suburb}</div>}
           </div>
         </div>
         <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
@@ -204,20 +177,6 @@ const JobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLocations, is
           <GripVertical className="h-2.5 w-2.5 text-gray-500" />
         </div>
       </div>
-
-      {/* Right Placeholder Button */}
-      {onAddPlaceholder && !isMini && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddPlaceholder('right');
-          }}
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 border-2 border-gray-400 rounded-full p-0.5 z-30 shadow-md"
-          style={{ width: '20px', height: '20px' }}
-        >
-          <Plus className="h-3 w-3 text-gray-700" />
-        </button>
-      )}
     </div>
   );
 
@@ -238,7 +197,7 @@ const JobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLocations, is
   return jobCard;
 };
 
-const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLocations, isMini = false, onAddPlaceholder }) => {
+const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLocations }) => {
   const isLargeJob = job.sqm > 2000;
   const deliveryType = deliveryTypes?.find((dt) => dt.id === job.deliveryTypeId);
   const cardStyles = getJobCardInlineStyles(deliveryType, job);
@@ -246,26 +205,25 @@ const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLoca
   
   const isUnitDelivery = deliveryType?.code && ['UNITUP', 'UNITDWN', 'CRANE'].includes(deliveryType.code);
   const hasPodNotes = job.podNotes && job.podNotes.trim().length > 0;
-  const addressParts = isMini ? parseMiniAddress(job.deliveryLocation) : parseAddress(job.deliveryLocation);
+  const addressParts = parseAddress(job.deliveryLocation);
   
   const pickupLocation = pickupLocations?.find(loc => loc.id === job.pickupLocationId);
   const pickupShortname = pickupLocation?.shortname;
 
   const jobCard = (
     <div
-      className={`relative w-full h-full border-2 rounded p-2 text-xs cursor-pointer transition-all overflow-hidden group ${
+      className={`w-full h-full border-2 rounded p-2 text-xs cursor-pointer transition-all overflow-hidden ${
         isDragging ? 'opacity-50 scale-105 z-50' : ''
       }`}
       style={{
         ...cardStyles,
-        backgroundColor: cardStyles['--card-color-rgb'] ? `rgba(${cardStyles['--card-color-rgb']}, 0.75)` : cardStyles.backgroundColor,
         boxShadow: isDragging ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
       }}
       onMouseEnter={(e) => {
         if (!isDragging) {
           const rgb = cardStyles['--card-color-rgb'];
           if (rgb) {
-            e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.85)`;
+            e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.10)`;
             e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
           }
         }
@@ -274,28 +232,26 @@ const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLoca
         if (!isDragging) {
           const rgb = cardStyles['--card-color-rgb'];
           if (rgb) {
-            e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.75)`;
+            e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.06)`;
             e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
           }
+        }
+      }}
+      onMouseDown={(e) => {
+        const rgb = cardStyles['--card-color-rgb'];
+        if (rgb) {
+          e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.08)`;
+        }
+      }}
+      onMouseUp={(e) => {
+        const rgb = cardStyles['--card-color-rgb'];
+        if (rgb) {
+          e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.10)`;
         }
       }}
       onClick={onClick}
       aria-label={`${textStyles.name} delivery for ${job.customerName}`}
     >
-      {/* Left Placeholder Button */}
-      {onAddPlaceholder && !isMini && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddPlaceholder('left');
-          }}
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 border-2 border-gray-400 rounded-full p-0.5 z-30 shadow-md"
-          style={{ width: '20px', height: '20px' }}
-        >
-          <Plus className="h-3 w-3 text-gray-700" />
-        </button>
-      )}
-
       <div className="flex items-start justify-between gap-1 h-full">
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="flex items-center gap-1 mb-1 flex-wrap">
@@ -308,22 +264,22 @@ const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLoca
                 {deliveryType.code}
               </span>
             )}
-            {pickupShortname && !isMini && (
+            {pickupShortname && (
               <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-purple-100 text-purple-700">
                 {pickupShortname}
               </span>
             )}
-            {job.sqm && !isMini && (
+            {job.sqm && (
               <span className="bg-white/80 text-gray-900 px-1 py-0.5 font-bold rounded text-[9px] shadow-sm">
                 {job.sqm.toLocaleString()}m²
               </span>
             )}
-            {job.weightKg && !isMini && (
+            {job.weightKg && (
               <span className="bg-white/80 text-gray-900 px-1 py-0.5 font-bold rounded text-[9px] shadow-sm">
                 {(job.weightKg / 1000).toFixed(1)}t
               </span>
             )}
-            {isUnitDelivery && job.totalUnits && !isMini && (
+            {isUnitDelivery && job.totalUnits && (
               <span className="px-1 py-0.5 rounded text-[9px] font-semibold bg-indigo-100 text-indigo-700">
                 {job.totalUnits} units
               </span>
@@ -336,23 +292,17 @@ const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLoca
             )}
           </div>
 
-          <div className="font-semibold truncate text-sm mb-0.5 text-gray-900">
+          <div
+            className="font-semibold truncate text-sm mb-0.5 text-gray-900"
+          >
             {job.customerName}
           </div>
-          <div className="text-[11px] leading-tight text-gray-700">
-            {isMini ? (
-              <>
-                {addressParts.streetNum && <div className="truncate">{addressParts.streetNum}</div>}
-                {addressParts.streetName && <div className="truncate">{addressParts.streetName}</div>}
-                {addressParts.suburb && <div className="truncate">{addressParts.suburb}</div>}
-              </>
-            ) : (
-              <>
-                {addressParts.unit && <div className="truncate">{addressParts.unit}</div>}
-                {addressParts.street && <div className="truncate">{addressParts.street}</div>}
-                {addressParts.suburb && <div className="truncate">{addressParts.suburb}</div>}
-              </>
-            )}
+          <div 
+            className="text-[11px] leading-tight text-gray-700"
+          >
+            {addressParts.unit && <div className="truncate">{addressParts.unit}</div>}
+            {addressParts.street && <div className="truncate">{addressParts.street}</div>}
+            {addressParts.suburb && <div className="truncate">{addressParts.suburb}</div>}
           </div>
         </div>
         <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
@@ -368,20 +318,6 @@ const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLoca
           <GripVertical className="h-2.5 w-2.5 text-gray-500" />
         </div>
       </div>
-
-      {/* Right Placeholder Button */}
-      {onAddPlaceholder && !isMini && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddPlaceholder('right');
-          }}
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 border-2 border-gray-400 rounded-full p-0.5 z-30 shadow-md"
-          style={{ width: '20px', height: '20px' }}
-        >
-          <Plus className="h-3 w-3 text-gray-700" />
-        </button>
-      )}
     </div>
   );
 
@@ -454,6 +390,8 @@ export default function SchedulerGrid({
       if (base44 && base44.auth && typeof base44.auth.me === 'function') {
         const user = await base44.auth.me();
         setCurrentUser(user);
+      } else {
+        console.warn('base44.auth.me() is not available. Placeholder creation might be disabled.');
       }
     };
     fetchUser();
@@ -471,26 +409,30 @@ export default function SchedulerGrid({
     fetchPickupLocations();
   }, []);
 
-  // Get all jobs for a specific cell (truck + time slot)
-  const getJobsForCell = (truckId, timeSlotId) => {
-    const cellAssignments = assignments.filter(
-      (a) => a.truckId === truckId && a.timeSlotId === timeSlotId
-    );
-    
-    // Sort by slotPosition (1, 2, 3, 4) for proper column ordering
-    cellAssignments.sort((a, b) => (a.slotPosition || 1) - (b.slotPosition || 1));
-    
-    return cellAssignments
-      .map((a) => ({
-        job: jobs.find((j) => j.id === a.jobId),
-        assignment: a
-      }))
-      .filter(item => item.job);
+  const getJobsForCell = (truckId, timeSlotId, slotPosition) => {
+    const cellAssignments = assignments.filter((a) => {
+      if (a.truckId !== truckId || a.timeSlotId !== timeSlotId) return false;
+      if (a.slotPosition === slotPosition) return true;
+      if (a.slotPosition === slotPosition - 1 && (a.slotPosition === 1 || a.slotPosition === 3)) {
+        return true;
+      }
+      return false;
+    });
+    return cellAssignments.map((a) => jobs.find((j) => j.id === a.jobId)).filter(Boolean);
   };
 
-  // Get placeholders bound to a specific job
-  const getPlaceholdersForJob = (jobId) => {
-    return placeholders.filter(p => p.boundJobId === jobId);
+  const getPlaceholdersForCell = (truckId, timeSlotId, slotPosition) => {
+    return placeholders.filter((p) => {
+      if (p.truckId !== truckId || p.timeSlotId !== timeSlotId) return false;
+      
+      // If placeholder has a slotPosition defined, only show in that specific block
+      if (p.slotPosition) {
+        return p.slotPosition === slotPosition;
+      }
+      
+      // If placeholder doesn't have slotPosition, only show in block 1 (backward compatibility)
+      return slotPosition === 1;
+    });
   };
 
   const getUnscheduledJobs = () => {
@@ -508,28 +450,6 @@ export default function SchedulerGrid({
   const handleJobClick = (job) => {
     setSelectedJob(job);
     setJobDialogOpen(true);
-  };
-
-  const handleAddPlaceholder = async (jobId, truckId, timeSlotId, slotPosition, side) => {
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.appRole !== 'dispatcher')) {
-      return;
-    }
-
-    try {
-      await base44.entities.Placeholder.create({
-        truckId,
-        timeSlotId,
-        date: selectedDate,
-        label: 'Note',
-        color: 'gray',
-        boundJobId: jobId,
-        placementSide: side, // 'left' or 'right'
-        slotPosition
-      });
-      window.location.reload();
-    } catch (error) {
-      console.error('Error creating placeholder:', error);
-    }
   };
 
   const unscheduledJobs = getUnscheduledJobs();
@@ -596,14 +516,16 @@ export default function SchedulerGrid({
             <span className="font-semibold text-xs">Truck</span>
           </div>
           <div className="flex flex-1">
-            {TIME_SLOTS.map((slot) => (
-              <div
-                key={slot.id}
-                className={`${slot.color} border-r border-gray-200 flex items-center justify-center flex-1`}
-                style={{ minWidth: '200px' }}>
-                <span className="text-[10px] lg:text-xs font-semibold text-gray-700 text-center px-1">{slot.label}</span>
-              </div>
-            ))}
+            {TIME_SLOTS.map((slot) => {
+              return (
+                <div
+                  key={slot.id}
+                  className={`${slot.color} border-r border-gray-200 flex items-center justify-center flex-1`}
+                  style={{ minWidth: '200px' }}>
+                  <span className="text-[10px] lg:text-xs font-semibold text-gray-700 text-center px-1">{slot.label}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -645,154 +567,135 @@ export default function SchedulerGrid({
 
                 <div className="flex flex-1 relative">
                   {TIME_SLOTS.map((slot) => {
-                    const cellJobs = getJobsForCell(truck.id, slot.id);
-                    const jobCount = cellJobs.length;
-                    const columnWidth = jobCount > 0 ? `${100 / jobCount}%` : '100%';
-                    const isMiniCard = jobCount > 1;
-
                     return (
                       <div
                         key={slot.id}
-                        className={`${slot.color} border-r border-gray-200 flex flex-1 relative transition-all duration-300`}
+                        className={`${slot.color} border-r border-gray-200 flex flex-1`}
                         style={{ minWidth: '200px' }}>
-                        {cellJobs.length === 0 ? (
-                          // Empty cell - single droppable
-                          <Droppable
-                            droppableId={`${truck.id}-${slot.id}-1`}
-                            direction="horizontal"
-                            isDropDisabled={!dragDropEnabled}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className={`w-full relative group flex items-center justify-center ${
-                                  snapshot.isDraggingOver ? 'ring-2 ring-inset ring-blue-500 bg-blue-100' : ''
-                                }`}
-                                style={{ minHeight: '132px' }}>
-                                {canCreatePlaceholder && !snapshot.isDraggingOver && (
-                                  <button
-                                    onClick={() => onOpenPlaceholderDialog(truck.id, slot.id, 1)}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-2"
-                                    style={{ width: '48px', height: '48px' }}>
-                                    <Plus className="h-6 w-6 text-gray-400" />
-                                  </button>
-                                )}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        ) : (
-                          // Cell with jobs - split into columns
-                          <div className="flex w-full">
-                            {cellJobs.map((item, colIndex) => {
-                              const leftPlaceholders = getPlaceholdersForJob(item.job.id).filter(p => p.placementSide === 'left');
-                              const rightPlaceholders = getPlaceholdersForJob(item.job.id).filter(p => p.placementSide === 'right');
-                              const hasLeftPlaceholder = leftPlaceholders.length > 0;
-                              const hasRightPlaceholder = rightPlaceholders.length > 0;
+                        {[1, 3].map((blockStart) => {
+                          const slotJobs = getJobsForCell(truck.id, slot.id, blockStart);
+                          const slotPlaceholders = getPlaceholdersForCell(truck.id, slot.id, blockStart);
+                          const droppableId = `${truck.id}-${slot.id}-${blockStart}`;
+                          const cellKey = droppableId;
+                          const isDraggingOver = draggingOverCell === cellKey;
 
-                              return (
-                                <Droppable
-                                  key={`${truck.id}-${slot.id}-${colIndex + 1}`}
-                                  droppableId={`${truck.id}-${slot.id}-${colIndex + 1}`}
-                                  direction="horizontal"
-                                  isDropDisabled={!dragDropEnabled}>
-                                  {(provided, snapshot) => (
+                          return (
+                            <Droppable
+                              key={blockStart}
+                              droppableId={droppableId}
+                              direction="vertical"
+                              isDropDisabled={!dragDropEnabled}>
+                              {(provided, snapshot) => {
+                                if (snapshot.isDraggingOver && draggingOverCell !== cellKey) {
+                                  setDraggingOverCell(cellKey);
+                                } else if (!snapshot.isDraggingOver && draggingOverCell === cellKey) {
+                                  setDraggingOverCell(null);
+                                }
+
+                                return (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                    className={`relative border-r border-gray-200 group overflow-visible flex-1 ${
+                                      snapshot.isDraggingOver ? 'ring-2 ring-inset ring-blue-500 bg-blue-100' : ''
+                                    }`}
+                                    style={{
+                                      minWidth: '100px',
+                                      minHeight: '132px',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      position: 'relative'
+                                    }}>
+                                    {/* Top Placeholder Button */}
+                                    {canCreatePlaceholder && slotJobs.length > 0 && !isDraggingOver && (
+                                      <button
+                                        onClick={() => onOpenPlaceholderDialog(truck.id, slot.id, blockStart)}
+                                        className="absolute top-1 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 border-2 border-gray-300 rounded-full p-1 z-20 shadow-sm"
+                                        style={{ width: '24px', height: '24px' }}>
+                                        <Plus className="h-3 w-3 text-gray-600" />
+                                      </button>
+                                    )}
+
+                                    {/* Centered Content Container */}
                                     <div
-                                      ref={provided.innerRef}
-                                      {...provided.droppableProps}
-                                      className={`relative group flex items-center justify-center transition-all duration-300 ${
-                                        snapshot.isDraggingOver ? 'ring-2 ring-inset ring-blue-500 bg-blue-100' : ''
-                                      }`}
-                                      style={{ 
-                                        width: columnWidth,
-                                        minHeight: '132px',
-                                        padding: '8px 4px'
-                                      }}>
-                                      <div className="relative flex items-center justify-center w-full h-full">
-                                        {/* Left Placeholder */}
-                                        {hasLeftPlaceholder && leftPlaceholders.map(placeholder => (
-                                          <div
-                                            key={placeholder.id}
-                                            className="absolute left-0 top-1/2 -translate-y-1/2 z-0"
-                                            style={{
-                                              width: '120px',
-                                              height: '146px',
-                                              marginRight: '-28px'
-                                            }}>
-                                            <PlaceholderBlock
-                                              placeholder={placeholder}
-                                              onUpdated={() => window.location.reload()}
-                                            />
-                                          </div>
-                                        ))}
-
-                                        {/* Job Card */}
+                                      className="flex flex-col gap-2 items-center justify-center w-full px-1">
+                                      {slotJobs.map((job, index) => (
                                         <Draggable
-                                          draggableId={item.job.id}
-                                          index={colIndex}
+                                          key={job.id}
+                                          draggableId={job.id}
+                                          index={index}
                                           isDragDisabled={!dragDropEnabled}>
                                           {(provided, snapshot) => (
                                             <div
                                               ref={provided.innerRef}
                                               {...provided.draggableProps}
                                               {...provided.dragHandleProps}
-                                              className="relative z-10"
                                               style={{
                                                 ...provided.draggableProps.style,
-                                                width: isMiniCard ? '140px' : '196px',
-                                                minHeight: '100px',
-                                                marginLeft: hasLeftPlaceholder ? '28px' : '0',
-                                                marginRight: hasRightPlaceholder ? '28px' : '0'
+                                                width: '100%',
+                                                maxWidth: '196px',
+                                                minHeight: '100px'
                                               }}>
                                               <ScheduledJobBlock
-                                                job={item.job}
+                                                job={job}
                                                 isDragging={snapshot.isDragging}
                                                 onClick={() =>
                                                   !snapshot.isDragging &&
-                                                  (onJobClick ? onJobClick(item.job) : handleJobClick(item.job))
+                                                  (onJobClick ? onJobClick(job) : handleJobClick(job))
                                                 }
                                                 deliveryTypes={deliveryTypes}
                                                 pickupLocations={pickupLocations}
-                                                isMini={isMiniCard}
-                                                onAddPlaceholder={canCreatePlaceholder ? (side) => 
-                                                  handleAddPlaceholder(
-                                                    item.job.id,
-                                                    truck.id,
-                                                    slot.id,
-                                                    colIndex + 1,
-                                                    side
-                                                  )
-                                                : null}
                                               />
                                             </div>
                                           )}
                                         </Draggable>
+                                      ))}
 
-                                        {/* Right Placeholder */}
-                                        {hasRightPlaceholder && rightPlaceholders.map(placeholder => (
-                                          <div
-                                            key={placeholder.id}
-                                            className="absolute right-0 top-1/2 -translate-y-1/2 z-0"
-                                            style={{
-                                              width: '120px',
-                                              height: '146px',
-                                              marginLeft: '-28px'
-                                            }}>
-                                            <PlaceholderBlock
-                                              placeholder={placeholder}
-                                              onUpdated={() => window.location.reload()}
-                                            />
-                                          </div>
-                                        ))}
-                                      </div>
-                                      {provided.placeholder}
+                                      {slotPlaceholders.map((placeholder) => (
+                                        <div
+                                          key={placeholder.id}
+                                          style={{
+                                            minHeight: '60px',
+                                            width: '100%',
+                                            maxWidth: '196px'
+                                          }}>
+                                          <PlaceholderBlock
+                                            placeholder={placeholder}
+                                            onUpdated={() => window.location.reload()}
+                                          />
+                                        </div>
+                                      ))}
                                     </div>
-                                  )}
-                                </Droppable>
-                              );
-                            })}
-                          </div>
-                        )}
+
+                                    {/* Bottom Placeholder Button */}
+                                    {canCreatePlaceholder && slotJobs.length > 0 && !isDraggingOver && (
+                                      <button
+                                        onClick={() => onOpenPlaceholderDialog(truck.id, slot.id, blockStart)}
+                                        className="absolute bottom-1 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 border-2 border-gray-300 rounded-full p-1 z-20 shadow-sm"
+                                        style={{ width: '24px', height: '24px' }}>
+                                        <Plus className="h-3 w-3 text-gray-600" />
+                                      </button>
+                                    )}
+
+                                    {/* Empty Cell Placeholder Button */}
+                                    {canCreatePlaceholder && slotJobs.length === 0 && slotPlaceholders.length === 0 && !isDraggingOver && (
+                                      <button
+                                        onClick={() => onOpenPlaceholderDialog(truck.id, slot.id, blockStart)}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-2 z-10"
+                                        style={{ width: '48px', height: '48px' }}>
+                                        <Plus className="h-6 w-6 text-gray-400" />
+                                      </button>
+                                    )}
+
+                                    {provided.placeholder}
+                                  </div>
+                                );
+                              }}
+                            </Droppable>
+                          );
+                        })}
                       </div>
                     );
                   })}
