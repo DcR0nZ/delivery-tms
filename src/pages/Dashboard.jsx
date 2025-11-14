@@ -194,9 +194,9 @@ export default function DashboardPage() {
 
   const getWeatherIcon = (condition) => {
     if (condition?.toLowerCase().includes('rain')) {
-      return <Droplets className="h-8 w-8 text-blue-500" />;
+      return <Droplets className="h-16 w-16 text-white opacity-50" />;
     }
-    return <Cloud className="h-8 w-8 text-gray-500" />;
+    return <Cloud className="h-16 w-16 text-white opacity-50" />;
   };
 
   if (loading) {
