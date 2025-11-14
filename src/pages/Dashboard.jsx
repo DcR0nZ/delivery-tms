@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Package, Truck, TrendingUp, Cloud, Droplets, Clock as ClockIcon, AlertTriangle, CalendarRange, CalendarClock } from 'lucide-react';
+import { Calendar, Package, Truck, TrendingUp, Cloud, Droplets, Clock as ClockIcon, AlertTriangle, CalendarRange } from 'lucide-react';
 import { format, startOfDay, startOfWeek, addDays } from 'date-fns';
 import { createPageUrl } from '@/utils';
 
@@ -21,10 +20,8 @@ export default function DashboardPage() {
     totalSqm: 0,
     difficultDeliveries: 0
   });
-  const [weekSoFarStats, setWeekSoFarStats] = useState({
-    totalJobs: 0,
-    totalSqm: 0,
-    difficultDeliveries: 0
+  const [thisWeekStats, setThisWeekStats] = useState({
+    totalSqm: 0
   });
   const [weather, setWeather] = useState(null);
   const [weatherError, setWeatherError] = useState(null);
@@ -143,22 +140,20 @@ export default function DashboardPage() {
           difficultDeliveries: weekAheadJobs.filter(job => job.isDifficultDelivery).length
         });
 
-        // Week So Far stats (Monday 00:00 → now)
-        const weekSoFarAssignments = allAssignments.filter(a => {
+        // This Week stats (Monday 00:00 → now)
+        const thisWeekAssignments = allAssignments.filter(a => {
           const assignmentDate = new Date(a.date);
           return assignmentDate >= mondayThisWeek && assignmentDate <= new Date();
         });
         
-        const weekSoFarJobIds = weekSoFarAssignments.map(a => a.jobId);
-        const weekSoFarJobs = filteredJobs.filter(job => 
-          weekSoFarJobIds.includes(job.id) && 
+        const thisWeekJobIds = thisWeekAssignments.map(a => a.jobId);
+        const thisWeekJobs = filteredJobs.filter(job => 
+          thisWeekJobIds.includes(job.id) && 
           (job.status === 'SCHEDULED' || job.status === 'DELIVERED')
         );
         
-        setWeekSoFarStats({
-          totalJobs: weekSoFarJobs.length,
-          totalSqm: weekSoFarJobs.reduce((sum, job) => sum + (job.sqm || 0), 0),
-          difficultDeliveries: weekSoFarJobs.filter(job => job.isDifficultDelivery).length
+        setThisWeekStats({
+          totalSqm: thisWeekJobs.reduce((sum, job) => sum + (job.sqm || 0), 0)
         });
 
         // Fetch weather only if page is visible initially
@@ -365,13 +360,17 @@ export default function DashboardPage() {
           <Card className="border-purple-200 bg-purple-50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-700">
-                Total Jobs
+                This Week
               </CardTitle>
               <Calendar className="h-5 w-5 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{weekAheadStats.totalJobs}</div>
-              <p className="text-xs text-gray-600 mt-1">Scheduled deliveries</p>
+              <div className="text-3xl font-bold text-gray-900">
+                {isOutreach ? `${thisWeekStats.totalSqm.toLocaleString()}h` : thisWeekStats.totalSqm.toLocaleString()}
+              </div>
+              <p className="text-xs text-gray-600 mt-1">
+                {isOutreach ? 'Total hours scheduled and/or completed since Monday morning' : 'Total m² scheduled and/or completed since Monday morning'}
+              </p>
             </CardContent>
           </Card>
 
@@ -407,58 +406,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* The Week So Far Section */}
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <CalendarClock className="h-5 w-5 text-teal-600" />
-          The Week So Far
-        </h2>
-        <p className="text-sm text-gray-600 mb-4">Progress since Monday, {format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'MMM d')}</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-teal-200 bg-teal-50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-700">
-                Total Jobs
-              </CardTitle>
-              <Calendar className="h-5 w-5 text-teal-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{weekSoFarStats.totalJobs}</div>
-              <p className="text-xs text-gray-600 mt-1">Completed this week</p>
-            </CardContent>
-          </Card>
 
-          <Card className="border-teal-200 bg-teal-50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-700">
-                {isOutreach ? 'Total Hours' : 'Total SQM'}
-              </CardTitle>
-              <Package className="h-5 w-5 text-teal-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">
-                {isOutreach ? `${weekSoFarStats.totalSqm.toLocaleString()}h` : weekSoFarStats.totalSqm.toLocaleString()}
-              </div>
-              <p className="text-xs text-gray-600 mt-1">
-                {isOutreach ? 'Machine hours used' : 'Square meters delivered'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-teal-200 bg-teal-50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-700">
-                Difficult Deliveries
-              </CardTitle>
-              <AlertTriangle className="h-5 w-5 text-teal-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{weekSoFarStats.difficultDeliveries}</div>
-              <p className="text-xs text-gray-600 mt-1">Handled this week</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
 
       {/* Quick Actions */}
       <div>
