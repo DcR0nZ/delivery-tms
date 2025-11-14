@@ -61,8 +61,11 @@ export default function DashboardPage() {
         const user = await base44.auth.me();
         setCurrentUser(user);
 
-        // Check if user has access to this page - all authenticated users can see dashboard
-        // No access restrictions needed
+        // Check if user has access to this page
+        if (user.role !== 'admin' && user.appRole !== 'dispatcher' && user.appRole !== 'manager' && user.appRole !== 'outreach') {
+          window.location.href = createPageUrl('DailyJobBoard');
+          return;
+        }
 
         const today = format(startOfDay(new Date()), 'yyyy-MM-dd');
         const mondayThisWeek = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday this week
@@ -191,9 +194,9 @@ export default function DashboardPage() {
 
   const getWeatherIcon = (condition) => {
     if (condition?.toLowerCase().includes('rain')) {
-      return <Droplets className="h-6 w-6 text-blue-400" />;
+      return <Droplets className="h-8 w-8 text-blue-500" />;
     }
-    return <Cloud className="h-6 w-6 text-blue-200" />;
+    return <Cloud className="h-8 w-8 text-gray-500" />;
   };
 
   if (loading) {
@@ -220,26 +223,26 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Clock Card */}
         <Card className="bg-gradient-to-br from-blue-500 to-blue-700">
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="text-white">
                 <p className="text-sm font-medium opacity-90">Current Time</p>
-                <p className="text-4xl font-bold mt-2">
+                <p className="text-5xl font-bold mt-2">
                   {format(currentTime, 'h:mm')}
-                  <span className="text-xl ml-2">{format(currentTime, 'a')}</span>
+                  <span className="text-2xl ml-2">{format(currentTime, 'a')}</span>
                 </p>
-                <p className="text-base mt-2 opacity-90">
+                <p className="text-lg mt-2 opacity-90">
                   {format(currentTime, 'EEEE, MMMM d, yyyy')}
                 </p>
               </div>
-              <ClockIcon className="h-12 w-12 text-white opacity-50" />
+              <ClockIcon className="h-16 w-16 text-white opacity-50" />
             </div>
           </CardContent>
         </Card>
 
         {/* Weather Card */}
         <Card className="bg-gradient-to-br from-indigo-500 to-indigo-700">
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="text-white">
               <div className="flex items-center justify-between">
                 <div>
@@ -247,10 +250,10 @@ export default function DashboardPage() {
                   {weather ? (
                     <>
                       <div className="flex items-baseline mt-2">
-                        <p className="text-4xl font-bold">{Math.round(weather.temp)}°</p>
-                        <span className="text-xl ml-2">C</span>
+                        <p className="text-5xl font-bold">{Math.round(weather.temp)}°</p>
+                        <span className="text-2xl ml-2">C</span>
                       </div>
-                      <p className="text-base mt-2 capitalize opacity-90">{weather.description}</p>
+                      <p className="text-lg mt-2 capitalize opacity-90">{weather.description}</p>
                       <div className="flex items-center gap-4 mt-3">
                         <div className="flex items-center gap-2">
                           <Droplets className="h-4 w-4" />
@@ -262,9 +265,9 @@ export default function DashboardPage() {
                       </div>
                     </>
                   ) : weatherError ? (
-                    <p className="text-base mt-2">{weatherError}</p>
+                    <p className="text-lg mt-2">{weatherError}</p>
                   ) : (
-                    <p className="text-base mt-2">Loading weather...</p>
+                    <p className="text-lg mt-2">Loading weather...</p>
                   )}
                 </div>
                 <div>
