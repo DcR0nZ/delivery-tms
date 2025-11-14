@@ -326,7 +326,7 @@ export default function Layout({ children, currentPageName }) {
           } else if (currentUser.appRole === 'dispatcher') {
             dashboardUrl = createPageUrl('Dashboard');
           } else if (currentUser.appRole === 'driver') {
-            dashboardUrl = createPageUrl('DriverDashboard');
+            dashboardUrl = createPageUrl('Dashboard');
           } else if (currentUser.appRole === 'manager') {
             dashboardUrl = createPageUrl('Dashboard');
           } else if (currentUser.appRole === 'customer') {
