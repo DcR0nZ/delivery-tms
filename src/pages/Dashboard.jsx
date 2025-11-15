@@ -360,7 +360,7 @@ export default function DashboardPage() {
           <Card className="border-purple-200 bg-purple-50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-700">
-                This Week
+                Total Delivered This Week
               </CardTitle>
               <Calendar className="h-5 w-5 text-purple-600" />
             </CardHeader>
