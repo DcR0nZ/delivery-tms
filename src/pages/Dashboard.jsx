@@ -351,7 +351,7 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <CalendarRange className="h-5 w-5 text-purple-600" />
-          Weekly Overview
+          The Week Ahead
         </h2>
         <p className="text-sm text-gray-600 mb-4">
           Remaining this week (now through {format(addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 6), 'EEE, MMM d')})
@@ -360,13 +360,13 @@ export default function DashboardPage() {
           <Card className="border-purple-200 bg-purple-50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-700">
-                This Week So Far
+                This Week
               </CardTitle>
               <Calendar className="h-5 w-5 text-purple-600" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-gray-900">
-                {isOutreach ? `${thisWeekStats.totalSqm.toLocaleString()}h` : `${thisWeekStats.totalSqm.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}m²`}
+                {isOutreach ? `${thisWeekStats.totalSqm.toLocaleString()}h` : thisWeekStats.totalSqm.toLocaleString()}
               </div>
               <p className="text-xs text-gray-600 mt-1">
                 {isOutreach ? 'Total hours scheduled and/or completed since Monday morning' : 'Total m² scheduled and/or completed since Monday morning'}
