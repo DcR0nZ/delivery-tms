@@ -149,7 +149,7 @@ export default function DashboardPage() {
         const thisWeekJobIds = thisWeekAssignments.map(a => a.jobId);
         const thisWeekJobs = filteredJobs.filter(job => 
           thisWeekJobIds.includes(job.id) && 
-          job.status === 'SCHEDULED'
+          (job.status === 'SCHEDULED' || job.status === 'DELIVERED')
         );
         
         setThisWeekStats({
