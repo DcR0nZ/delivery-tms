@@ -61,12 +61,6 @@ export default function DashboardPage() {
         const user = await base44.auth.me();
         setCurrentUser(user);
 
-        // Check if user has access to this page
-        if (user.role !== 'admin' && user.appRole !== 'dispatcher' && user.appRole !== 'manager' && user.appRole !== 'outreach' && user.appRole !== 'driver') {
-          window.location.href = createPageUrl('DailyJobBoard');
-          return;
-        }
-
         const today = format(startOfDay(new Date()), 'yyyy-MM-dd');
         const mondayThisWeek = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday this week
         const sundayThisWeek = addDays(mondayThisWeek, 6); // Sunday this week
