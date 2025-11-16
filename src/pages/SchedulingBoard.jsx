@@ -206,54 +206,7 @@ export default function SchedulingBoard() {
       const timeSlotId = parts.slice(1, parts.length - 1).join('-');
       const truckId = parts[0];
 
-      const isTargetingBlock1 = requestedSlotPosition <= 2;
-      const primaryBlockStart = isTargetingBlock1 ? 1 : 3;
-      const primaryBlockEnd = isTargetingBlock1 ? 2 : 4;
-
-      // Check which slots are occupied (jobs and other placeholders)
-      const placeholdersExcludingCurrent = placeholders.filter(p => p.id !== placeholderId);
-      const assignmentsInCell = assignments.filter(a => 
-        a.truckId === truckId && 
-        a.timeSlotId === timeSlotId
-      );
-      const placeholdersInCell = placeholdersExcludingCurrent.filter(p => 
-        p.truckId === truckId && 
-        p.timeSlotId === timeSlotId
-      );
-
-      const primarySlot1Occupied = assignmentsInCell.some(a => a.slotPosition === primaryBlockStart) || 
-                                   placeholdersInCell.some(p => p.slotPosition === primaryBlockStart);
-      const primarySlot2Occupied = assignmentsInCell.some(a => a.slotPosition === primaryBlockEnd) || 
-                                   placeholdersInCell.some(p => p.slotPosition === primaryBlockEnd);
-
-      let finalSlotPosition;
-      if (!primarySlot1Occupied) {
-        finalSlotPosition = primaryBlockStart;
-      } else if (!primarySlot2Occupied) {
-        finalSlotPosition = primaryBlockEnd;
-      } else {
-        // Primary block full, try secondary block
-        const secondaryBlockStart = isTargetingBlock1 ? 3 : 1;
-        const secondaryBlockEnd = isTargetingBlock1 ? 4 : 2;
-        
-        const secondarySlot1Occupied = assignmentsInCell.some(a => a.slotPosition === secondaryBlockStart) || 
-                                       placeholdersInCell.some(p => p.slotPosition === secondaryBlockStart);
-        const secondarySlot2Occupied = assignmentsInCell.some(a => a.slotPosition === secondaryBlockEnd) || 
-                                       placeholdersInCell.some(p => p.slotPosition === secondaryBlockEnd);
-
-        if (!secondarySlot1Occupied) {
-          finalSlotPosition = secondaryBlockStart;
-        } else if (!secondarySlot2Occupied) {
-          finalSlotPosition = secondaryBlockEnd;
-        } else {
-          toast({
-            title: "Time Window Full",
-            description: "All slots in this time window are occupied.",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
+      const finalSlotPosition = requestedSlotPosition <= 2 ? 1 : 3;
 
       // Update placeholder position
       await base44.entities.Placeholder.update(placeholderId, {
@@ -288,10 +241,6 @@ export default function SchedulingBoard() {
     const truckId = parts[0];
     
     const assignmentsExcludingCurrentJob = assignments.filter(a => a.jobId !== jobId);
-    const placeholdersInCell = placeholders.filter(p => 
-      p.truckId === truckId && 
-      p.timeSlotId === timeSlotId
-    );
     
     let finalSlotPosition;
 
@@ -303,45 +252,29 @@ export default function SchedulingBoard() {
     const secondaryBlockStart = isTargetingBlock1 ? 3 : 1;
     const secondaryBlockEnd = isTargetingBlock1 ? 4 : 2;
 
-    // Check which slots are occupied in primary block (both jobs and placeholders)
-    const primarySlot1Occupied = assignmentsExcludingCurrentJob.some(a => 
+    const primaryBlockOccupied = assignmentsExcludingCurrentJob.some(a => 
       a.truckId === truckId && 
       a.timeSlotId === timeSlotId && 
-      a.slotPosition === primaryBlockStart
-    ) || placeholdersInCell.some(p => p.slotPosition === primaryBlockStart);
+      a.slotPosition >= primaryBlockStart &&
+      a.slotPosition <= primaryBlockEnd
+    );
 
-    const primarySlot2Occupied = assignmentsExcludingCurrentJob.some(a => 
-      a.truckId === truckId && 
-      a.timeSlotId === timeSlotId && 
-      a.slotPosition === primaryBlockEnd
-    ) || placeholdersInCell.some(p => p.slotPosition === primaryBlockEnd);
-
-    if (!primarySlot1Occupied) {
+    if (!primaryBlockOccupied) {
       finalSlotPosition = primaryBlockStart;
-    } else if (!primarySlot2Occupied) {
-      finalSlotPosition = primaryBlockEnd;
     } else {
-      // Primary block full, check secondary block
-      const secondarySlot1Occupied = assignmentsExcludingCurrentJob.some(a => 
+      const secondaryBlockOccupied = assignmentsExcludingCurrentJob.some(a => 
         a.truckId === truckId && 
         a.timeSlotId === timeSlotId && 
-        a.slotPosition === secondaryBlockStart
-      ) || placeholdersInCell.some(p => p.slotPosition === secondaryBlockStart);
+        a.slotPosition >= secondaryBlockStart &&
+        a.slotPosition <= secondaryBlockEnd
+      );
 
-      const secondarySlot2Occupied = assignmentsExcludingCurrentJob.some(a => 
-        a.truckId === truckId && 
-        a.timeSlotId === timeSlotId && 
-        a.slotPosition === secondaryBlockEnd
-      ) || placeholdersInCell.some(p => p.slotPosition === secondaryBlockEnd);
-
-      if (!secondarySlot1Occupied) {
+      if (!secondaryBlockOccupied) {
         finalSlotPosition = secondaryBlockStart;
-      } else if (!secondarySlot2Occupied) {
-        finalSlotPosition = secondaryBlockEnd;
       } else {
         toast({
           title: "Time Window Full",
-          description: "All slots in this time window are occupied. Please choose a different time or truck.",
+          description: "Both delivery blocks in this time window are occupied. Please choose a different time or truck.",
           variant: "destructive",
         });
         return;
