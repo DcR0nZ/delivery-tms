@@ -461,10 +461,27 @@ export default function DriverMyRuns() {
               </Badge>
             )}
           </h1>
-          <p className="text-gray-600 mt-1">
-            Truck: {currentUser.truck}
-            {!isOnline && jobs.length > 0 && ' • Showing cached schedule'}
-          </p>
+          <div className="flex items-center gap-3 mt-1">
+            <Select
+              value={currentUser.truck || ''}
+              onValueChange={handleTruckChange}
+              disabled={changingTruck || !isOnline}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Select truck" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACCO1">ACCO1</SelectItem>
+                <SelectItem value="ACCO2">ACCO2</SelectItem>
+                <SelectItem value="FUSO">FUSO</SelectItem>
+                <SelectItem value="ISUZU">ISUZU</SelectItem>
+                <SelectItem value="UD">UD</SelectItem>
+              </SelectContent>
+            </Select>
+            {!isOnline && jobs.length > 0 && (
+              <span className="text-sm text-gray-600">Showing cached schedule</span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <DeliveryTypeLegend />
