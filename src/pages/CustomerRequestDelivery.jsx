@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Upload, Loader2, FileText, Sparkles, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import AddressAutocomplete from '../components/scheduling/AddressAutocomplete';
+
 
 export default function CustomerRequestDeliveryPage() {
   const [deliveryTypes, setDeliveryTypes] = useState([]);
@@ -314,14 +313,7 @@ export default function CustomerRequestDeliveryPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleInteractOutside = (e) => {
-    const target = e.target;
-    // Check if click is on Google Places autocomplete dropdown
-    if (target.closest('.pac-container') || target.classList.contains('pac-item')) {
-      e.preventDefault();
-      return;
-    }
-  };
+
 
   const selectedDeliveryType = deliveryTypes.find(t => t.id === formData.deliveryTypeId);
   const isUnitsDelivery = selectedDeliveryType?.name?.toLowerCase().includes('units');
@@ -415,12 +407,7 @@ export default function CustomerRequestDeliveryPage() {
       
       <form onSubmit={handleSubmit}>
         <Card>
-          <CardContent className="p-6 space-y-6" onPointerDownCapture={(e) => {
-            // Prevent dialog closing when clicking on autocomplete
-            if (e.target.closest('.pac-container')) {
-              e.stopPropagation();
-            }
-          }}>
+          <CardContent className="p-6 space-y-6">
             
             {/* AI Document Extraction Section */}
             <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-purple-50 border-2 border-purple-200 rounded-lg p-4 shadow-sm">
@@ -555,23 +542,14 @@ export default function CustomerRequestDeliveryPage() {
             
             <div>
               <label htmlFor="deliveryLocation" className="block text-sm font-medium text-gray-700 mb-1">Delivery Address *</label>
-              <AddressAutocomplete
+              <Input
                 id="deliveryLocation"
+                name="deliveryLocation"
                 value={formData.deliveryLocation}
-                onChange={(data) => setFormData(prev => ({ 
-                  ...prev, 
-                  deliveryLocation: data.address,
-                  deliveryLatitude: data.latitude,
-                  deliveryLongitude: data.longitude
-                }))}
-                placeholder="Start typing address..."
+                onChange={handleChange}
+                placeholder="Enter delivery address"
                 required
               />
-              {formData.deliveryLatitude && formData.deliveryLongitude && (
-                <p className="text-xs text-green-600 mt-1">
-                  ✓ Location coordinates captured
-                </p>
-              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
