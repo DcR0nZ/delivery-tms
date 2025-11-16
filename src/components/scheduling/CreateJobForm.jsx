@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,7 @@ import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
 import { extractJobDataWithGemini } from '@/functions/extractJobDataWithGemini';
 import { sendToZapier } from '@/functions/sendToZapier';
-import AddressAutocomplete from './AddressAutocomplete';
+
 
 const TRUCKS = [
   { id: 'ACCO1', name: 'ACCO1' },
@@ -260,32 +259,10 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
   const canScheduleDirectly = currentUser && (currentUser.role === 'admin' || currentUser.appRole === 'dispatcher');
   const selectedCustomer = customers.find(c => c.id === formData.customerId);
 
-  const handleInteractOutside = (e) => {
-    const target = e.target;
-    
-    // Prevent closing when clicking on Google Places autocomplete or related elements
-    if (target.closest('.pac-container') || 
-        target.classList.contains('pac-item') ||
-        target.classList.contains('pac-item-query') ||
-        target.closest('[data-autocomplete-wrapper]') ||
-        target.hasAttribute('data-autocomplete-input')) {
-      e.preventDefault();
-      e.stopPropagation(); // Stop propagation to prevent radix-ui from closing the dialog
-      return;
-    }
-  };
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    if (!formData.deliveryLocation || !formData.deliveryLatitude || !formData.deliveryLongitude) {
-      toast({
-        title: "Missing Location Coordinates",
-        description: "Please select an address from the suggestions to ensure accurate GPS coordinates.",
-        variant: "destructive",
-      });
-      return;
-    }
     
     const isCustomer = currentUser && currentUser.role !== 'admin' && currentUser.appRole !== 'dispatcher';
     
@@ -490,11 +467,7 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
   return (
     <>
       <Dialog open={open && !showConfirmation} onOpenChange={onOpenChange}>
-        <DialogContent 
-          className="sm:max-w-[600px]"
-          onInteractOutside={handleInteractOutside}
-          onPointerDownOutside={handleInteractOutside}
-        >
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Create New Job</DialogTitle>
           </DialogHeader>
@@ -602,30 +575,14 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
                   <label htmlFor="deliveryLocation" className="block text-sm font-medium text-gray-700 mb-1">
                     Delivery Address <span className="text-red-500">*</span>
                   </label>
-                  <AddressAutocomplete
+                  <Input
                     id="deliveryLocation"
+                    name="deliveryLocation"
                     value={formData.deliveryLocation}
-                    onChange={(data) => {
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        deliveryLocation: data.address,
-                        deliveryLatitude: data.latitude,
-                        deliveryLongitude: data.longitude
-                      }));
-                    }}
-                    placeholder="Start typing address..."
+                    onChange={handleChange}
+                    placeholder="Enter delivery address"
                     required
                   />
-                  {formData.deliveryLatitude && formData.deliveryLongitude && (
-                    <p className="text-xs text-green-600 mt-1">
-                      ✓ Location coordinates captured ({formData.deliveryLatitude.toFixed(4)}, {formData.deliveryLongitude.toFixed(4)})
-                    </p>
-                  )}
-                  {formData.deliveryLocation && (!formData.deliveryLatitude || !formData.deliveryLongitude) && (
-                    <p className="text-xs text-orange-600 mt-1">
-                      ⚠ Please select an address from the dropdown to capture GPS coordinates
-                    </p>
-                  )}
                 </div>
 
                 <div>
