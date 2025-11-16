@@ -47,14 +47,18 @@ export default function AddressAutocomplete({ id, value, onChange, placeholder, 
 
     setIsLoading(true);
     try {
+      console.log('Searching for:', query);
       const response = await base44.functions.invoke('geoscapeAddressSearch', { query });
+      console.log('Response:', response);
       
       if (!mountedRef.current) return;
 
       if (response.data && response.data.features) {
+        console.log('Found features:', response.data.features.length);
         setSuggestions(response.data.features);
         setShowDropdown(response.data.features.length > 0);
       } else {
+        console.log('No features in response');
         setSuggestions([]);
         setShowDropdown(false);
       }
