@@ -37,6 +37,7 @@ export default function DriverMyRuns() {
   const [problemDetails, setProblemDetails] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [changingTruck, setChangingTruck] = useState(false);
 
   const { toast } = useToast();
   const { isOnline, cacheJobs, cacheAssignments, getCachedJobs, getCachedAssignments } = useOffline();
