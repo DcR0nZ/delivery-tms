@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
@@ -46,7 +45,24 @@ export default function SchedulingBoard() {
   const [placeholders, setPlaceholders] = useState([]);
   const [deliveryTypes, setDeliveryTypes] = useState([]);
   const [pickupLocations, setPickupLocations] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  
+  // Get initial date from URL or default to today
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateParam = urlParams.get('date');
+    if (dateParam) {
+      try {
+        const date = new Date(dateParam);
+        if (!isNaN(date.getTime())) {
+          return dateParam;
+        }
+      } catch (e) {
+        // Invalid date, use today
+      }
+    }
+    return format(new Date(), 'yyyy-MM-dd');
+  });
+  
   const [loading, setLoading] = useState(true);
   const [isCreateJobOpen, setCreateJobOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -248,18 +264,28 @@ export default function SchedulingBoard() {
     fetchData();
   };
 
+  const updateDateInUrl = (date) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('date', date);
+    window.history.replaceState({}, '', url);
+  };
+
   const goToPreviousDay = () => {
-    const newDate = subDays(new Date(selectedDate), 1);
-    setSelectedDate(format(newDate, 'yyyy-MM-dd'));
+    const newDate = format(subDays(new Date(selectedDate), 1), 'yyyy-MM-dd');
+    setSelectedDate(newDate);
+    updateDateInUrl(newDate);
   };
 
   const goToNextDay = () => {
-    const newDate = addDays(new Date(selectedDate), 1);
-    setSelectedDate(format(newDate, 'yyyy-MM-dd'));
+    const newDate = format(addDays(new Date(selectedDate), 1), 'yyyy-MM-dd');
+    setSelectedDate(newDate);
+    updateDateInUrl(newDate);
   };
 
   const goToToday = () => {
-    setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
+    const newDate = format(new Date(), 'yyyy-MM-dd');
+    setSelectedDate(newDate);
+    updateDateInUrl(newDate);
   };
 
   const handleOpenPlaceholderDialog = (truckId, timeSlotId, requestedSlotPosition) => {
