@@ -402,36 +402,38 @@ export default function DriverMyRuns() {
             )}
           </div>
 
-          <Button
-            onClick={() => handleStartNavigation(job)}
-            className="w-full mb-2 bg-blue-600 hover:bg-blue-700"
-            size="sm"
-          >
-            <Navigation className="h-4 w-4 mr-2" />
-            Start Navigation
-            <ExternalLink className="h-3 w-3 ml-2" />
-          </Button>
-
           {isToday && (
-            <div className="grid grid-cols-2 gap-2">
-              {STATUS_OPTIONS.filter(s => s.value !== 'COMPLETED').map((statusOpt) => {
-                const Icon = statusOpt.icon;
-                const isActive = job.driverStatus === statusOpt.value;
-                return (
-                  <Button
-                    key={statusOpt.value}
-                    onClick={() => handleStatusUpdate(job, statusOpt.value)}
-                    variant={isActive ? "default" : "outline"}
-                    size="sm"
-                    className={isActive ? statusOpt.color : ''}
-                    disabled={!isOnline && statusOpt.value !== 'COMPLETED'}
-                  >
-                    <Icon className="h-3 w-3 mr-1" />
-                    {statusOpt.label}
-                  </Button>
-                );
-              })}
-            </div>
+            <>
+              <Button
+                onClick={() => handleStartNavigation(job)}
+                className="w-full mb-2 bg-blue-600 hover:bg-blue-700"
+                size="sm"
+              >
+                <Navigation className="h-4 w-4 mr-2" />
+                Start Navigation
+                <ExternalLink className="h-3 w-3 ml-2" />
+              </Button>
+
+              <div className="grid grid-cols-2 gap-2">
+                {STATUS_OPTIONS.filter(s => s.value !== 'COMPLETED').map((statusOpt) => {
+                  const Icon = statusOpt.icon;
+                  const isActive = job.driverStatus === statusOpt.value;
+                  return (
+                    <Button
+                      key={statusOpt.value}
+                      onClick={() => handleStatusUpdate(job, statusOpt.value)}
+                      variant={isActive ? "default" : "outline"}
+                      size="sm"
+                      className={isActive ? statusOpt.color : ''}
+                      disabled={!isOnline && statusOpt.value !== 'COMPLETED'}
+                    >
+                      <Icon className="h-3 w-3 mr-1" />
+                      {statusOpt.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </>
           )}
 
           {job.driverStatus === 'PROBLEM' && job.problemDetails && (
