@@ -347,9 +347,6 @@ export default function DashboardPage() {
           <CalendarRange className="h-5 w-5 text-purple-600" />
           This Week
         </h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Remaining this week (now through {format(addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 6), 'EEE, MMM d')})
-        </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="border-purple-200 bg-purple-50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
