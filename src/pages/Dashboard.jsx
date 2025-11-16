@@ -341,7 +341,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* The Week Ahead Section */}
+      {/* The Week Section */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <CalendarRange className="h-5 w-5 text-purple-600" />
@@ -360,7 +360,7 @@ export default function DashboardPage() {
                 {isOutreach ? `${thisWeekStats.totalSqm.toLocaleString()}h` : thisWeekStats.totalSqm.toLocaleString()}
               </div>
               <p className="text-xs text-gray-600 mt-1">
-                {isOutreach ? 'Total hours scheduled and/or completed since Monday morning' : 'Total m² scheduled and/or completed since Monday morning'}
+                {isOutreach ? 'Total hours scheduled and/or completed since Monday morning' : 'Total m² delivered this week'}
               </p>
             </CardContent>
           </Card>
@@ -368,7 +368,7 @@ export default function DashboardPage() {
           <Card className="border-purple-200 bg-purple-50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-700">
-                {isOutreach ? 'Total Hours' : 'Total m²'}
+                {isOutreach ? 'Total Hours' : 'Scheduled'}
               </CardTitle>
               <Package className="h-5 w-5 text-purple-600" />
             </CardHeader>
@@ -377,7 +377,7 @@ export default function DashboardPage() {
                 {isOutreach ? `${weekAheadStats.totalSqm.toLocaleString()}h` : weekAheadStats.totalSqm.toLocaleString()}
               </div>
               <p className="text-xs text-gray-600 mt-1">
-                {isOutreach ? 'Booked machine hours' : 'Square meters to deliver'}
+                {isOutreach ? 'Booked machine hours' : 'Total m² still to deliver'}
               </p>
             </CardContent>
           </Card>
