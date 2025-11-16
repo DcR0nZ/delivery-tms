@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import ProofOfDeliveryUpload from '../components/scheduling/ProofOfDeliveryUpload';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, MapPin, Package, Clock, Navigation, AlertTriangle, CheckCircle2, Truck as TruckIcon, Radio, AlertCircle, ExternalLink, RefreshCw, WifiOff } from 'lucide-react';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
@@ -38,6 +39,11 @@ export default function DriverMyRuns() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [changingTruck, setChangingTruck] = useState(false);
+  const [delayDialogOpen, setDelayDialogOpen] = useState(false);
+  const [delayType, setDelayType] = useState(null); // 'pickup' or 'site'
+  const [delayDescription, setDelayDescription] = useState('');
+  const [activeDelays, setActiveDelays] = useState({}); // { jobId: { type, startTime, description } }
+  const [podDialogJob, setPodDialogJob] = useState(null);
 
   const { toast } = useToast();
   const { isOnline, cacheJobs, cacheAssignments, getCachedJobs, getCachedAssignments } = useOffline();
@@ -251,6 +257,88 @@ export default function DriverMyRuns() {
     fetchData(false);
   };
 
+  const handleDelayToggle = (job, type) => {
+    const delayKey = `${job.id}-${type}`;
+    const activeDelay = activeDelays[delayKey];
+
+    if (activeDelay) {
+      // Stop delay and update job notes
+      const duration = Math.floor((Date.now() - activeDelay.startTime) / 1000);
+      const minutes = Math.floor(duration / 60);
+      const seconds = duration % 60;
+      const timeStr = `${minutes}m ${seconds}s`;
+      
+      const delayNote = `${timeStr} delay at ${type === 'pickup' ? 'pickup' : 'delivery'} due to ${activeDelay.description}`;
+      
+      // Update job notes
+      const currentNotes = job.deliveryNotes || '';
+      const updatedNotes = currentNotes ? `${currentNotes}\n${delayNote}` : delayNote;
+      
+      if (isOnline) {
+        base44.entities.Job.update(job.id, { deliveryNotes: updatedNotes }).then(() => {
+          toast({
+            title: "Delay Recorded",
+            description: `${timeStr} delay has been logged.`,
+          });
+          fetchData(false);
+        });
+      }
+
+      // Remove from active delays
+      const newDelays = { ...activeDelays };
+      delete newDelays[delayKey];
+      setActiveDelays(newDelays);
+    } else {
+      // Start delay - show dialog
+      setSelectedJob(job);
+      setDelayType(type);
+      setDelayDialogOpen(true);
+      setDelayDescription('');
+    }
+  };
+
+  const confirmDelayStart = () => {
+    if (!delayDescription.trim()) {
+      toast({
+        title: "Description Required",
+        description: "Please describe the reason for the delay.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const delayKey = `${selectedJob.id}-${delayType}`;
+    setActiveDelays({
+      ...activeDelays,
+      [delayKey]: {
+        type: delayType,
+        startTime: Date.now(),
+        description: delayDescription
+      }
+    });
+
+    setDelayDialogOpen(false);
+    setDelayDescription('');
+
+    toast({
+      title: "Delay Timer Started",
+      description: `Tracking ${delayType === 'pickup' ? 'pickup' : 'site'} delay...`,
+    });
+  };
+
+  const formatDelayTimer = (startTime) => {
+    const [, forceUpdate] = useState({});
+    useEffect(() => {
+      const interval = setInterval(() => forceUpdate({}), 1000);
+      return () => clearInterval(interval);
+    }, []);
+
+    const duration = Math.floor((Date.now() - startTime) / 1000);
+    const minutes = Math.floor(duration / 60);
+    const seconds = duration % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   const handleTruckChange = async (newTruckId) => {
     setChangingTruck(true);
     try {
@@ -320,6 +408,30 @@ export default function DriverMyRuns() {
     const StatusIcon = statusOption?.icon || Radio;
     const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
     const cardStyles = getJobCardStyles(deliveryType, job);
+
+    const pickupDelayKey = `${job.id}-pickup`;
+    const siteDelayKey = `${job.id}-site`;
+    const pickupDelayActive = activeDelays[pickupDelayKey];
+    const siteDelayActive = activeDelays[siteDelayKey];
+
+    const DelayTimer = ({ startTime }) => {
+      const [time, setTime] = useState('');
+      
+      useEffect(() => {
+        const updateTimer = () => {
+          const duration = Math.floor((Date.now() - startTime) / 1000);
+          const minutes = Math.floor(duration / 60);
+          const seconds = duration % 60;
+          setTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+        };
+        
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+      }, [startTime]);
+
+      return <span>{time}</span>;
+    };
 
     return (
       <Card
@@ -407,31 +519,64 @@ export default function DriverMyRuns() {
               <Button
                 onClick={() => handleStartNavigation(job)}
                 className="w-full mb-2 bg-blue-600 hover:bg-blue-700"
-                size="sm"
               >
                 <Navigation className="h-4 w-4 mr-2" />
                 Start Navigation
                 <ExternalLink className="h-3 w-3 ml-2" />
               </Button>
 
-              <div className="grid grid-cols-2 gap-2">
-                {STATUS_OPTIONS.filter(s => s.value !== 'COMPLETED').map((statusOpt) => {
-                  const Icon = statusOpt.icon;
-                  const isActive = job.driverStatus === statusOpt.value;
-                  return (
-                    <Button
-                      key={statusOpt.value}
-                      onClick={() => handleStatusUpdate(job, statusOpt.value)}
-                      variant={isActive ? "default" : "outline"}
-                      size="sm"
-                      className={isActive ? statusOpt.color : ''}
-                      disabled={!isOnline && statusOpt.value !== 'COMPLETED'}
-                    >
-                      <Icon className="h-3 w-3 mr-1" />
-                      {statusOpt.label}
-                    </Button>
-                  );
-                })}
+              <div className="space-y-2">
+                <Button
+                  onClick={() => handleDelayToggle(job, 'pickup')}
+                  variant={pickupDelayActive ? "default" : "outline"}
+                  className={`w-full ${pickupDelayActive ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                  disabled={!isOnline}
+                >
+                  <TruckIcon className="h-4 w-4 mr-2" />
+                  {pickupDelayActive ? (
+                    <>
+                      En route <span className="ml-2 font-mono">(<DelayTimer startTime={pickupDelayActive.startTime} />)</span>
+                    </>
+                  ) : (
+                    'Delay at Pickup'
+                  )}
+                </Button>
+
+                <Button
+                  onClick={() => handleDelayToggle(job, 'site')}
+                  variant={siteDelayActive ? "default" : "outline"}
+                  className={`w-full ${siteDelayActive ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                  disabled={!isOnline}
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  {siteDelayActive ? (
+                    <>
+                      Unloading <span className="ml-2 font-mono">(<DelayTimer startTime={siteDelayActive.startTime} />)</span>
+                    </>
+                  ) : (
+                    'Delay on Site'
+                  )}
+                </Button>
+
+                <Button
+                  onClick={() => setPodDialogJob(job)}
+                  variant="outline"
+                  className="w-full"
+                  disabled={!isOnline}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Upload POD
+                </Button>
+
+                <Button
+                  onClick={() => handleStatusUpdate(job, 'PROBLEM')}
+                  variant={job.driverStatus === 'PROBLEM' ? "default" : "outline"}
+                  className={`w-full ${job.driverStatus === 'PROBLEM' ? 'bg-red-600 hover:bg-red-700' : ''}`}
+                  disabled={!isOnline}
+                >
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Problem
+                </Button>
               </div>
             </>
           )}
@@ -638,6 +783,54 @@ export default function DriverMyRuns() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delay Description Dialog */}
+      <Dialog open={delayDialogOpen} onOpenChange={setDelayDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {delayType === 'pickup' ? 'Delay at Pickup' : 'Delay on Site'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Customer: <strong>{selectedJob?.customerName}</strong></p>
+              <p className="text-sm text-gray-500">Timer will start after you provide a description.</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Reason for Delay *</label>
+              <Textarea
+                value={delayDescription}
+                onChange={(e) => setDelayDescription(e.target.value)}
+                placeholder="Describe the reason for the delay..."
+                className="min-h-[100px]"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDelayDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmDelayStart}>
+              Start Timer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* POD Upload Dialog */}
+      {podDialogJob && (
+        <ProofOfDeliveryUpload
+          job={podDialogJob}
+          open={!!podDialogJob}
+          onOpenChange={(open) => !open && setPodDialogJob(null)}
+          onComplete={() => {
+            setPodDialogJob(null);
+            fetchData(false);
+          }}
+        />
+      )}
     </div>
   );
 }
