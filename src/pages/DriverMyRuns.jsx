@@ -30,6 +30,7 @@ export default function DriverMyRuns() {
   const [currentUser, setCurrentUser] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [placeholders, setPlaceholders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
@@ -62,15 +63,16 @@ export default function DriverMyRuns() {
       setCurrentUser(user);
 
       if (user.truck) {
-        let allAssignments, allJobs;
+        let allAssignments, allJobs, allPlaceholders;
 
         if (isOnline) {
           // Online - fetch from server, filtering out cancelled jobs for drivers
-          [allAssignments, allJobs] = await Promise.all([
+          [allAssignments, allJobs, allPlaceholders] = await Promise.all([
             base44.entities.Assignment.list(),
             base44.entities.Job.filter({
               status: { $in: ['PENDING_APPROVAL', 'APPROVED', 'SCHEDULED', 'DELIVERED'] }
-            })
+            }),
+            base44.entities.Placeholder.list()
           ]);
 
           // Cache for offline use
@@ -82,6 +84,8 @@ export default function DriverMyRuns() {
             getCachedAssignments(),
             getCachedJobs()
           ]);
+
+          allPlaceholders = [];
 
           // Filter out cancelled jobs from cached data as well
           allJobs = allJobs.filter(job =>
@@ -103,10 +107,14 @@ export default function DriverMyRuns() {
         const myJobIds = myAssignments.map(a => a.jobId);
         const myJobs = allJobs.filter(j => myJobIds.includes(j.id));
         setJobs(myJobs);
+
+        const myPlaceholders = allPlaceholders.filter(p => p.truckId === user.truck);
+        setPlaceholders(myPlaceholders);
       } else {
         // No truck assigned - clear assignments and jobs
         setAssignments([]);
         setJobs([]);
+        setPlaceholders([]);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -127,6 +135,8 @@ export default function DriverMyRuns() {
             const myJobIds = myAssignments.map(a => a.jobId);
             const myJobs = cachedJobs.filter(j => myJobIds.includes(j.id));
             setJobs(myJobs);
+
+            setPlaceholders([]);
           }
         } catch (cacheError) {
           console.error('Error loading cached data:', cacheError);
@@ -162,19 +172,36 @@ export default function DriverMyRuns() {
 
   const getJobsForDate = (dateString) => {
     const dateAssignments = assignments.filter(a => a.date === dateString);
+    const datePlaceholders = placeholders.filter(p => p.date === dateString);
     const timeSlotOrder = ['first-am', 'second-am', 'lunch', 'first-pm', 'second-pm'];
     
-    return dateAssignments
+    const jobItems = dateAssignments
       .map(a => ({
+        type: 'job',
         ...jobs.find(j => j.id === a.jobId),
         assignment: a
       }))
-      .filter(item => item.id)
-      .sort((a, b) => {
-        const orderA = timeSlotOrder.indexOf(a.assignment?.timeSlotId) ?? 999;
-        const orderB = timeSlotOrder.indexOf(b.assignment?.timeSlotId) ?? 999;
-        return orderA - orderB;
-      });
+      .filter(item => item.id);
+
+    const placeholderItems = datePlaceholders.map(p => ({
+      type: 'placeholder',
+      id: p.id,
+      label: p.label,
+      color: p.color,
+      assignment: {
+        timeSlotId: p.timeSlotId,
+        slotPosition: p.slotPosition
+      }
+    }));
+
+    const allItems = [...jobItems, ...placeholderItems];
+    
+    return allItems.sort((a, b) => {
+      const orderA = timeSlotOrder.indexOf(a.assignment?.timeSlotId) ?? 999;
+      const orderB = timeSlotOrder.indexOf(b.assignment?.timeSlotId) ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.assignment?.slotPosition ?? 0) - (b.assignment?.slotPosition ?? 0);
+    });
   };
 
   const handleJobClick = (job) => {
@@ -402,6 +429,40 @@ export default function DriverMyRuns() {
       </div>
     );
   }
+
+  const PlaceholderCard = ({ placeholder }) => {
+    const colorSchemes = {
+      gray: { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-300' },
+      blue: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+      green: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
+      yellow: { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300' },
+      purple: { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
+      pink: { bg: 'bg-pink-100', text: 'text-pink-800', border: 'border-pink-300' }
+    };
+
+    const colorScheme = colorSchemes[placeholder.color] || colorSchemes.gray;
+
+    return (
+      <Card className={`${colorScheme.bg} border-2 ${colorScheme.border}`}>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2">
+            <Package className={`h-4 w-4 ${colorScheme.text}`} />
+            <span className={`font-medium ${colorScheme.text}`}>
+              {placeholder.label}
+            </span>
+          </div>
+          {placeholder.assignment && (
+            <div className="flex items-center gap-2 text-sm mt-2">
+              <Clock className={`h-4 w-4 ${colorScheme.text}`} />
+              <span className={colorScheme.text}>
+                {placeholder.assignment.timeSlotId.replace(/-/g, ' ').toUpperCase()}
+              </span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   const JobCard = ({ job, isToday = false }) => {
     const statusOption = STATUS_OPTIONS.find(s => s.value === job.driverStatus);
@@ -677,9 +738,13 @@ export default function DriverMyRuns() {
               <p className="text-gray-500 text-center py-8">No deliveries scheduled for today</p>
             ) : (
               <div className="grid grid-cols-1 gap-4">
-                {todayJobs.map(job => (
-                  <JobCard key={job.id} job={job} isToday={true} />
-                ))}
+                {todayJobs.map(item => 
+                  item.type === 'placeholder' ? (
+                    <PlaceholderCard key={`placeholder-${item.id}`} placeholder={item} />
+                  ) : (
+                    <JobCard key={item.id} job={item} isToday={true} />
+                  )
+                )}
               </div>
             )}
           </CardContent>
@@ -697,9 +762,13 @@ export default function DriverMyRuns() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-4">
-              {tomorrowJobs.map(job => (
-                <JobCard key={job.id} job={job} />
-              ))}
+              {tomorrowJobs.map(item =>
+                item.type === 'placeholder' ? (
+                  <PlaceholderCard key={`placeholder-${item.id}`} placeholder={item} />
+                ) : (
+                  <JobCard key={item.id} job={item} />
+                )
+              )}
             </div>
           </CardContent>
         </Card>
@@ -721,9 +790,13 @@ export default function DriverMyRuns() {
                       {format(parseISO(date), 'EEEE, MMMM d, yyyy')}
                     </h3>
                     <div className="grid grid-cols-1 gap-4">
-                      {dateJobs.map(job => (
-                        <JobCard key={job.id} job={job} />
-                      ))}
+                      {dateJobs.map(item =>
+                        item.type === 'placeholder' ? (
+                          <PlaceholderCard key={`placeholder-${item.id}`} placeholder={item} />
+                        ) : (
+                          <JobCard key={item.id} job={item} />
+                        )
+                      )}
                     </div>
                   </div>
                 );
