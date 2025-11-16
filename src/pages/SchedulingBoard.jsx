@@ -182,56 +182,18 @@ export default function SchedulingBoard() {
   }, [fetchData, currentUser]);
 
   const handleDragEnd = async (result) => {
-    const { destination, source, draggableId } = result;
+    const { destination, source, draggableId: jobId } = result;
     if (!destination) return;
 
-    // Check if dragging a placeholder
-    const isPlaceholder = draggableId.startsWith('placeholder-');
-    const itemId = isPlaceholder ? draggableId.replace('placeholder-', '') : draggableId;
-
-    if (isPlaceholder) {
-      // Handle placeholder drag
-      const placeholder = placeholders.find(p => p.id === itemId);
-      if (!placeholder) return;
-
-      // Can't drag placeholder to unscheduled
-      if (destination.droppableId === 'unscheduled') {
-        toast({
-          title: "Invalid Move",
-          description: "Placeholders cannot be moved to unscheduled queue.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const parts = destination.droppableId.split('-');
-      const requestedSlotPosition = parseInt(parts[parts.length - 1]);
-      const timeSlotId = parts.slice(1, parts.length - 1).join('-');
-      const truckId = parts[0];
-
-      const isTargetingBlock1 = requestedSlotPosition <= 2;
-      const finalSlotPosition = isTargetingBlock1 ? 1 : 3;
-
-      await base44.entities.Placeholder.update(itemId, {
-        truckId,
-        timeSlotId,
-        slotPosition: finalSlotPosition,
-        date: selectedDate
-      });
-      fetchData();
-      return;
-    }
-
-    // Handle job drag (existing logic)
-    const sourceAssignment = assignments.find(a => a.jobId === itemId);
-    const jobToUpdate = jobs.find(j => j.id === itemId);
+    const sourceAssignment = assignments.find(a => a.jobId === jobId);
+    const jobToUpdate = jobs.find(j => j.id === jobId);
 
     if (!jobToUpdate) return;
 
     if (destination.droppableId === 'unscheduled') {
       if (sourceAssignment) {
         await base44.entities.Assignment.delete(sourceAssignment.id);
-        await base44.entities.Job.update(itemId, { ...jobToUpdate, status: 'APPROVED' });
+        await base44.entities.Job.update(jobId, { ...jobToUpdate, status: 'APPROVED' });
         fetchData();
       }
       return;
@@ -242,7 +204,7 @@ export default function SchedulingBoard() {
     const timeSlotId = parts.slice(1, parts.length - 1).join('-');
     const truckId = parts[0];
     
-    const assignmentsExcludingCurrentJob = assignments.filter(a => a.jobId !== itemId);
+    const assignmentsExcludingCurrentJob = assignments.filter(a => a.jobId !== jobId);
     
     let finalSlotPosition;
 
@@ -291,13 +253,13 @@ export default function SchedulingBoard() {
       });
     } else {
       await base44.entities.Assignment.create({
-        jobId: itemId,
+        jobId,
         truckId,
         timeSlotId,
         slotPosition: finalSlotPosition,
         date: selectedDate,
       });
-      await base44.entities.Job.update(itemId, { ...jobToUpdate, status: 'SCHEDULED' });
+      await base44.entities.Job.update(jobId, { ...jobToUpdate, status: 'SCHEDULED' });
     }
     fetchData();
   };
