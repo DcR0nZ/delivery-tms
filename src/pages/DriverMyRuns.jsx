@@ -156,10 +156,19 @@ export default function DriverMyRuns() {
 
   const getJobsForDate = (dateString) => {
     const dateAssignments = assignments.filter(a => a.date === dateString);
-    return dateAssignments.map(a => ({
-      ...jobs.find(j => j.id === a.jobId),
-      assignment: a
-    })).filter(item => item.id);
+    const timeSlotOrder = ['first-am', 'second-am', 'lunch', 'first-pm', 'second-pm'];
+    
+    return dateAssignments
+      .map(a => ({
+        ...jobs.find(j => j.id === a.jobId),
+        assignment: a
+      }))
+      .filter(item => item.id)
+      .sort((a, b) => {
+        const orderA = timeSlotOrder.indexOf(a.assignment?.timeSlotId) ?? 999;
+        const orderB = timeSlotOrder.indexOf(b.assignment?.timeSlotId) ?? 999;
+        return orderA - orderB;
+      });
   };
 
   const handleJobClick = (job) => {
