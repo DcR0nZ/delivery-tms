@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { Badge } from '@/components/ui/badge';
@@ -567,12 +566,24 @@ export default function SchedulerGrid({
 
                 <div className="flex flex-1 relative">
                   {TIME_SLOTS.map((slot) => {
+                    // Get all jobs for this time slot (both blocks)
+                    const allJobsInSlot = [1, 3].flatMap((blockStart) => 
+                      getJobsForCell(truck.id, slot.id, blockStart)
+                    );
+                    const allPlaceholdersInSlot = [1, 3].flatMap((blockStart) => 
+                      getPlaceholdersForCell(truck.id, slot.id, blockStart)
+                    );
+                    
+                    // Determine how many slots to show based on content
+                    const totalItems = allJobsInSlot.length + allPlaceholdersInSlot.length;
+                    const blocksToShow = totalItems > 1 ? [1, 3] : [1];
+
                     return (
                       <div
                         key={slot.id}
                         className={`${slot.color} border-r border-gray-200 flex flex-1`}
                         style={{ minWidth: '200px' }}>
-                        {[1, 3].map((blockStart) => {
+                        {blocksToShow.map((blockStart) => {
                           const slotJobs = getJobsForCell(truck.id, slot.id, blockStart);
                           const slotPlaceholders = getPlaceholdersForCell(truck.id, slot.id, blockStart);
                           const droppableId = `${truck.id}-${slot.id}-${blockStart}`;
