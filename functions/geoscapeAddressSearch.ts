@@ -24,9 +24,9 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'API key not configured' }, { status: 500 });
         }
 
-        // Build the predictive search URL with query parameters
-        const url = new URL('https://api.psma.com.au/v2/addresses/predictive');
-        url.searchParams.set('query', query);
+        // Build the search URL with query parameters
+        const url = new URL('https://api.psma.com.au/v2/addresses/search');
+        url.searchParams.set('address', query);
         url.searchParams.set('maxNumberOfResults', '10');
 
         console.log('Calling Geoscape API:', url.toString());
