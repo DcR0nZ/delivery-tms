@@ -314,6 +314,15 @@ export default function Layout({ children, currentPageName }) {
         const isRootPath = location.pathname === '/' || location.pathname === '/app';
         const isLoginCallback = location.search.includes('code=') || location.search.includes('state=');
         
+        console.log('===== REDIRECT DEBUG =====');
+        console.log('Current User appRole:', currentUser.appRole);
+        console.log('Current User role:', currentUser.role);
+        console.log('Current Page Name:', currentPageName);
+        console.log('Is Root Path:', isRootPath);
+        console.log('Is Login Callback:', isLoginCallback);
+        console.log('Is Pending:', isPending);
+        console.log('=========================');
+        
         if ((isRootPath || isLoginCallback) && !isPending && currentPageName !== 'Dashboard' && currentPageName !== 'AdminJobs' && currentPageName !== 'DailyJobBoard') {
           let dashboardUrl;
           
