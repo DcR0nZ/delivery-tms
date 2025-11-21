@@ -21,6 +21,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
 import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from '../components/scheduling/DeliveryTypeColorUtils';
 import { Link } from 'react-router-dom';
+import GlobalSearchBar from '../components/search/GlobalSearchBar';
+import AdvancedFilters from '../components/search/AdvancedFilters';
 
 export default function SchedulingBoard() {
   const [jobs, setJobs] = useState([]);
@@ -62,6 +64,16 @@ export default function SchedulingBoard() {
   const [notificationReadStatus, setNotificationReadStatus] = useState([]);
   const [unreadNotifications, setUnreadNotifications] = useState([]);
   const [readNotifications, setReadNotifications] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    deliveryTypeIds: [],
+    customerIds: [],
+    statuses: [],
+    truckIds: [],
+    dateFrom: '',
+    dateTo: '',
+    isDifficultDelivery: false
+  });
 
   const { toast } = useToast();
 
@@ -96,7 +108,7 @@ export default function SchedulingBoard() {
     try {
       const date = startOfDay(new Date(selectedDate));
       
-      const [allAvailableJobs, todaysAssignments, allDeliveryTypes, todaysPlaceholders, readStatusList, allPickupLocations, allTrucks, allTimeSlots] = await Promise.all([
+      const [allAvailableJobs, todaysAssignments, allDeliveryTypes, todaysPlaceholders, readStatusList, allPickupLocations, allTrucks, allTimeSlots, allCustomers] = await Promise.all([
         base44.entities.Job.filter({ 
           status: { $in: ['PENDING_APPROVAL', 'APPROVED', 'SCHEDULED', 'DELIVERED'] }
         }),
@@ -106,7 +118,8 @@ export default function SchedulingBoard() {
         base44.entities.NotificationReadStatus.filter({ userId: currentUser.id }),
         base44.entities.PickupLocation.list(),
         base44.entities.Truck.filter({ status: 'ACTIVE' }),
-        base44.entities.TimeSlot.filter({ status: 'ACTIVE' }, 'order', 100)
+        base44.entities.TimeSlot.filter({ status: 'ACTIVE' }, 'order', 100),
+        base44.entities.Customer.list()
       ]);
 
       const currentTenant = currentUser.tenantId || 'plasterboard_dispatch';
@@ -138,6 +151,7 @@ export default function SchedulingBoard() {
       setPickupLocations(allPickupLocations);
       setTrucks(allTrucks);
       setTimeSlots(allTimeSlots);
+      setCustomers(allCustomers);
 
       const assignedJobIds = new Set(visibleJobs.filter(j => 
         j.status === 'SCHEDULED' || 
@@ -326,13 +340,50 @@ export default function SchedulingBoard() {
     setJobDialogOpen(true);
   };
 
+  const applyAdvancedFilters = (jobsList) => {
+    let filtered = [...jobsList];
+
+    if (advancedFilters.deliveryTypeIds?.length > 0) {
+      filtered = filtered.filter(j => advancedFilters.deliveryTypeIds.includes(j.deliveryTypeId));
+    }
+
+    if (advancedFilters.customerIds?.length > 0) {
+      filtered = filtered.filter(j => advancedFilters.customerIds.includes(j.customerId));
+    }
+
+    if (advancedFilters.statuses?.length > 0) {
+      filtered = filtered.filter(j => advancedFilters.statuses.includes(j.status));
+    }
+
+    if (advancedFilters.truckIds?.length > 0) {
+      const relevantAssignments = assignments.filter(a => advancedFilters.truckIds.includes(a.truckId));
+      const jobIdsInTrucks = new Set(relevantAssignments.map(a => a.jobId));
+      filtered = filtered.filter(j => jobIdsInTrucks.has(j.id));
+    }
+
+    if (advancedFilters.dateFrom) {
+      filtered = filtered.filter(j => j.requestedDate >= advancedFilters.dateFrom);
+    }
+
+    if (advancedFilters.dateTo) {
+      filtered = filtered.filter(j => j.requestedDate <= advancedFilters.dateTo);
+    }
+
+    if (advancedFilters.isDifficultDelivery) {
+      filtered = filtered.filter(j => j.isDifficultDelivery === true);
+    }
+
+    return filtered;
+  };
+
   const getUnscheduledJobsForDate = () => {
     const assignedJobIds = new Set(assignments.map(a => a.jobId));
-    return jobs.filter(job => 
+    const unscheduled = jobs.filter(job => 
       !assignedJobIds.has(job.id) && 
       (job.status === 'APPROVED' || job.status === 'PENDING_APPROVAL') &&
       job.requestedDate === selectedDate
     );
+    return applyAdvancedFilters(unscheduled);
   };
 
   const getJobsForTruck = (truckId) => {
@@ -732,6 +783,35 @@ export default function SchedulingBoard() {
                   <p className="text-sm md:text-base text-gray-600 mt-1">Drag jobs to schedule them in time slots</p>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
+                  <GlobalSearchBar 
+                    jobs={jobs}
+                    deliveryTypes={deliveryTypes}
+                    onJobSelect={(job) => {
+                      setSelectedJob(job);
+                      setJobDialogOpen(true);
+                      if (job.requestedDate) {
+                        setSelectedDate(job.requestedDate);
+                        updateDateInUrl(job.requestedDate);
+                      }
+                    }}
+                  />
+                  <AdvancedFilters
+                    filters={advancedFilters}
+                    onFiltersChange={setAdvancedFilters}
+                    deliveryTypes={deliveryTypes}
+                    customers={customers}
+                    trucks={trucks}
+                    page="SchedulingBoard"
+                    onClearFilters={() => setAdvancedFilters({
+                      deliveryTypeIds: [],
+                      customerIds: [],
+                      statuses: [],
+                      truckIds: [],
+                      dateFrom: '',
+                      dateTo: '',
+                      isDifficultDelivery: false
+                    })}
+                  />
                   {/* Notification Dropdown - Only for admins and dispatchers */}
                   {canSeeNotifications && (
                     <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +9,8 @@ import { format } from 'date-fns';
 import { Search, Filter, X, AlertTriangle } from 'lucide-react';
 import JobDetailsDialog from '../components/scheduling/JobDetailsDialog';
 import { base44 } from '@/api/base44Client';
+import GlobalSearchBar from '../components/search/GlobalSearchBar';
+import AdvancedFilters from '../components/search/AdvancedFilters';
 
 export default function AdminJobsPage() {
   const [jobs, setJobs] = useState([]);
@@ -24,6 +25,16 @@ export default function AdminJobsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBy, setFilterBy] = useState('all');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [trucks, setTrucks] = useState([]);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    deliveryTypeIds: [],
+    customerIds: [],
+    statuses: [],
+    truckIds: [],
+    dateFrom: '',
+    dateTo: '',
+    isDifficultDelivery: false
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,11 +46,12 @@ export default function AdminJobsPage() {
         const isCustomer = user.role !== 'admin' && user.appRole !== 'dispatcher';
         const isOutreach = user.appRole === 'outreach';
 
-        const [allJobs, allAssignments, fetchedCustomers, fetchedDeliveryTypes] = await Promise.all([
+        const [allJobs, allAssignments, fetchedCustomers, fetchedDeliveryTypes, fetchedTrucks] = await Promise.all([
           base44.entities.Job.list(),
           base44.entities.Assignment.list(),
           base44.entities.Customer.list(),
-          base44.entities.DeliveryType.list()
+          base44.entities.DeliveryType.list(),
+          base44.entities.Truck.list()
         ]);
 
         let finalJobs = [...allJobs];
@@ -69,6 +81,7 @@ export default function AdminJobsPage() {
         setAssignments(allAssignments);
         setCustomers(fetchedCustomers);
         setDeliveryTypes(fetchedDeliveryTypes);
+        setTrucks(fetchedTrucks);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -81,6 +94,37 @@ export default function AdminJobsPage() {
 
   useEffect(() => {
     let result = [...jobs];
+
+    // Apply advanced filters first
+    if (advancedFilters.deliveryTypeIds?.length > 0) {
+      result = result.filter(j => advancedFilters.deliveryTypeIds.includes(j.deliveryTypeId));
+    }
+
+    if (advancedFilters.customerIds?.length > 0) {
+      result = result.filter(j => advancedFilters.customerIds.includes(j.customerId));
+    }
+
+    if (advancedFilters.statuses?.length > 0) {
+      result = result.filter(j => advancedFilters.statuses.includes(j.status));
+    }
+
+    if (advancedFilters.truckIds?.length > 0) {
+      const relevantAssignments = assignments.filter(a => advancedFilters.truckIds.includes(a.truckId));
+      const jobIdsInTrucks = new Set(relevantAssignments.map(a => a.jobId));
+      result = result.filter(j => jobIdsInTrucks.has(j.id));
+    }
+
+    if (advancedFilters.dateFrom) {
+      result = result.filter(j => j.requestedDate >= advancedFilters.dateFrom);
+    }
+
+    if (advancedFilters.dateTo) {
+      result = result.filter(j => j.requestedDate <= advancedFilters.dateTo);
+    }
+
+    if (advancedFilters.isDifficultDelivery) {
+      result = result.filter(j => j.isDifficultDelivery === true);
+    }
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -163,12 +207,21 @@ export default function AdminJobsPage() {
     }
 
     setFilteredJobs(result);
-  }, [searchQuery, filterBy, sortOrder, jobs, assignments]);
+  }, [searchQuery, filterBy, sortOrder, jobs, assignments, advancedFilters]);
 
   const handleClearFilters = () => {
     setSearchQuery('');
     setFilterBy('all');
     setSortOrder('desc');
+    setAdvancedFilters({
+      deliveryTypeIds: [],
+      customerIds: [],
+      statuses: [],
+      truckIds: [],
+      dateFrom: '',
+      dateTo: '',
+      isDifficultDelivery: false
+    });
   };
 
   const getAssignmentForJob = (jobId) => {
@@ -283,19 +336,37 @@ export default function AdminJobsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4">
-              {/* Search Bar */}
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search jobs by customer, location, contact, docket, or notes..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+              {/* Global Search Bar */}
+              <GlobalSearchBar 
+                jobs={jobs}
+                deliveryTypes={deliveryTypes}
+                onJobSelect={(job) => {
+                  setSelectedJob(job);
+                  setDialogOpen(true);
+                }}
+                placeholder="Search by customer, address, docket..."
+              />
 
-              {/* Filter By Dropdown */}
-              <div className="flex gap-2">
+              <AdvancedFilters
+                filters={advancedFilters}
+                onFiltersChange={setAdvancedFilters}
+                deliveryTypes={deliveryTypes}
+                customers={customers}
+                trucks={trucks}
+                page="AdminJobs"
+                onClearFilters={() => setAdvancedFilters({
+                  deliveryTypeIds: [],
+                  customerIds: [],
+                  statuses: [],
+                  truckIds: [],
+                  dateFrom: '',
+                  dateTo: '',
+                  isDifficultDelivery: false
+                })}
+              />
+
+              {/* Sort Options */}
+              <div className="flex gap-2 flex-wrap">
                 <div className="w-48">
                   <Select value={filterBy} onValueChange={setFilterBy}>
                     <SelectTrigger>
@@ -345,18 +416,32 @@ export default function AdminJobsPage() {
             </div>
 
             {/* Active Filter Indicator */}
-            {hasActiveFilters && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                <span className="font-medium">Active filters:</span>
-                {searchQuery && (
-                  <Badge variant="outline" className="gap-1">
-                    Search: "{searchQuery}"
-                  </Badge>
+            {(hasActiveFilters || Object.values(advancedFilters).some(v => Array.isArray(v) ? v.length > 0 : v)) && (
+              <div className="mt-3 flex items-center gap-2 text-sm text-gray-600 flex-wrap">
+                <span className="font-medium">Active:</span>
+                {advancedFilters.deliveryTypeIds?.length > 0 && (
+                  <Badge variant="outline">{advancedFilters.deliveryTypeIds.length} Delivery Types</Badge>
+                )}
+                {advancedFilters.customerIds?.length > 0 && (
+                  <Badge variant="outline">{advancedFilters.customerIds.length} Customers</Badge>
+                )}
+                {advancedFilters.statuses?.length > 0 && (
+                  <Badge variant="outline">{advancedFilters.statuses.length} Statuses</Badge>
+                )}
+                {advancedFilters.truckIds?.length > 0 && (
+                  <Badge variant="outline">{advancedFilters.truckIds.length} Trucks</Badge>
+                )}
+                {advancedFilters.dateFrom && (
+                  <Badge variant="outline">From: {format(new Date(advancedFilters.dateFrom), 'MMM d')}</Badge>
+                )}
+                {advancedFilters.dateTo && (
+                  <Badge variant="outline">To: {format(new Date(advancedFilters.dateTo), 'MMM d')}</Badge>
+                )}
+                {advancedFilters.isDifficultDelivery && (
+                  <Badge variant="outline">Difficult Only</Badge>
                 )}
                 {filterBy !== 'all' && (
-                  <Badge variant="outline" className="gap-1">
-                    Sort by: {filterBy.replace(/([A-Z])/g, ' $1').trim()}
-                  </Badge>
+                  <Badge variant="outline">Sort: {filterBy.replace(/([A-Z])/g, ' $1').trim()}</Badge>
                 )}
                 <span className="text-gray-500">({filteredJobs.length} {filteredJobs.length === 1 ? 'result' : 'results'})</span>
               </div>

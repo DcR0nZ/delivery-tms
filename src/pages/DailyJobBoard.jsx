@@ -12,6 +12,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from '../components/scheduling/DeliveryTypeColorUtils';
 import DeliveryTypeLegend from '../components/scheduling/DeliveryTypeLegend';
+import GlobalSearchBar from '../components/search/GlobalSearchBar';
+import AdvancedFilters from '../components/search/AdvancedFilters';
 
 const COLOR_OPTIONS = {
   gray: { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-300' },
@@ -29,6 +31,15 @@ export default function DailyJobBoard() {
   const [createJobOpen, setCreateJobOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    deliveryTypeIds: [],
+    customerIds: [],
+    statuses: [],
+    truckIds: [],
+    dateFrom: '',
+    dateTo: '',
+    isDifficultDelivery: false
+  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -108,6 +119,43 @@ export default function DailyJobBoard() {
     init();
   }, []);
 
+  // Apply advanced filters helper
+  const applyAdvancedFilters = (jobsList) => {
+    let filtered = [...jobsList];
+
+    if (advancedFilters.deliveryTypeIds?.length > 0) {
+      filtered = filtered.filter(j => advancedFilters.deliveryTypeIds.includes(j.deliveryTypeId));
+    }
+
+    if (advancedFilters.customerIds?.length > 0) {
+      filtered = filtered.filter(j => advancedFilters.customerIds.includes(j.customerId));
+    }
+
+    if (advancedFilters.statuses?.length > 0) {
+      filtered = filtered.filter(j => advancedFilters.statuses.includes(j.status));
+    }
+
+    if (advancedFilters.truckIds?.length > 0) {
+      const relevantAssignments = assignments.filter(a => advancedFilters.truckIds.includes(a.truckId));
+      const jobIdsInTrucks = new Set(relevantAssignments.map(a => a.jobId));
+      filtered = filtered.filter(j => jobIdsInTrucks.has(j.id));
+    }
+
+    if (advancedFilters.dateFrom) {
+      filtered = filtered.filter(j => j.requestedDate >= advancedFilters.dateFrom);
+    }
+
+    if (advancedFilters.dateTo) {
+      filtered = filtered.filter(j => j.requestedDate <= advancedFilters.dateTo);
+    }
+
+    if (advancedFilters.isDifficultDelivery) {
+      filtered = filtered.filter(j => j.isDifficultDelivery === true);
+    }
+
+    return filtered;
+  };
+
   // Process data for display using React.useMemo
   const { jobsByTruck, filteredJobs, dateFilteredPlaceholders } = React.useMemo(() => {
     if (!currentUser || loading) {
@@ -144,7 +192,10 @@ export default function DailyJobBoard() {
       visibleJobs = visibleJobs.filter((job) => allowedCustomerIds.includes(job.customerId));
     }
 
-    const dateFilteredAndVisibleJobs = visibleJobs.filter((job) => job.requestedDate === selectedDate);
+    let dateFilteredAndVisibleJobs = visibleJobs.filter((job) => job.requestedDate === selectedDate);
+    
+    // Apply advanced filters
+    dateFilteredAndVisibleJobs = applyAdvancedFilters(dateFilteredAndVisibleJobs);
 
     const newJobsByTruck = {};
     trucks.forEach((truck) => {
@@ -187,7 +238,7 @@ export default function DailyJobBoard() {
       filteredJobs: dateFilteredAndVisibleJobs,
       dateFilteredPlaceholders
     };
-  }, [jobs, assignments, placeholders, deliveryTypes, customers, pickupLocations, selectedDate, currentUser, loading]);
+  }, [jobs, assignments, placeholders, deliveryTypes, customers, pickupLocations, selectedDate, currentUser, loading, advancedFilters]);
 
   const goToPreviousDay = () => {
     const newDate = subDays(new Date(selectedDate), 1);
@@ -282,10 +333,46 @@ export default function DailyJobBoard() {
     return (
       <div className="min-h-screen bg-gray-50 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="bg-white border-b px-4 py-4 sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-bold text-gray-900">Daily Job Board</h1>
-            <div className="flex items-center gap-2">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-gray-900">Daily Job Board</h1>
               <DeliveryTypeLegend />
+            </div>
+            <div className="flex items-center gap-2">
+              <GlobalSearchBar 
+                jobs={jobs}
+                deliveryTypes={deliveryTypes}
+                onJobSelect={(job) => {
+                  setSelectedJob(job);
+                  setJobDialogOpen(true);
+                  if (job.requestedDate) {
+                    setSelectedDate(job.requestedDate);
+                  }
+                }}
+                placeholder="Search jobs..."
+              />
+              <AdvancedFilters
+                filters={advancedFilters}
+                onFiltersChange={setAdvancedFilters}
+                deliveryTypes={deliveryTypes}
+                customers={customers}
+                trucks={trucks}
+                page="DailyJobBoard"
+                onClearFilters={() => setAdvancedFilters({
+                  deliveryTypeIds: [],
+                  customerIds: [],
+                  statuses: [],
+                  truckIds: [],
+                  dateFrom: '',
+                  dateTo: '',
+                  isDifficultDelivery: false
+                })}
+              />
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <div className="flex items-center gap-2">
               <Button
                 size="sm"
                 variant="ghost"
@@ -525,7 +612,35 @@ export default function DailyJobBoard() {
             <h1 className="text-3xl font-bold text-gray-900">Daily Job Board</h1>
             <p className="text-gray-600 mt-1">View all scheduled deliveries for the day</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <GlobalSearchBar 
+              jobs={jobs}
+              deliveryTypes={deliveryTypes}
+              onJobSelect={(job) => {
+                setSelectedJob(job);
+                setJobDialogOpen(true);
+                if (job.requestedDate) {
+                  setSelectedDate(job.requestedDate);
+                }
+              }}
+            />
+            <AdvancedFilters
+              filters={advancedFilters}
+              onFiltersChange={setAdvancedFilters}
+              deliveryTypes={deliveryTypes}
+              customers={customers}
+              trucks={trucks}
+              page="DailyJobBoard"
+              onClearFilters={() => setAdvancedFilters({
+                deliveryTypeIds: [],
+                customerIds: [],
+                statuses: [],
+                truckIds: [],
+                dateFrom: '',
+                dateTo: '',
+                isDifficultDelivery: false
+              })}
+            />
             <DeliveryTypeLegend />
             {jobsFetching && (
               <div className="flex items-center gap-2 text-sm text-blue-600">
