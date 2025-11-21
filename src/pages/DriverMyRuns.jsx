@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import ProofOfDeliveryUpload from '../components/scheduling/ProofOfDeliveryUpload';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, MapPin, Package, Clock, Navigation, AlertTriangle, CheckCircle2, Truck as TruckIcon, Radio, AlertCircle, ExternalLink, RefreshCw, WifiOff } from 'lucide-react';
+import { Calendar, MapPin, Package, Clock, Navigation, AlertTriangle, CheckCircle2, Truck as TruckIcon, Radio, AlertCircle, ExternalLink, RefreshCw, WifiOff, Phone, MessageSquare, FileText } from 'lucide-react';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import JobDetailsDialog from '../components/scheduling/JobDetailsDialog';
 import LocationTracker from '../components/tracking/LocationTracker';
@@ -504,17 +504,18 @@ export default function DriverMyRuns() {
         className="hover:shadow-lg transition-all border-l-4"
         style={{
           borderLeftColor: job.driverStatus === 'PROBLEM' ? '#DC2626' : cardStyles.border,
-          backgroundColor: cardStyles.bg + '10' // 10% opacity background
+          backgroundColor: cardStyles.bg + '10'
         }}
       >
         <CardContent className="p-4">
+          {/* Header */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <h4 className="font-semibold text-gray-900">{job.customerName}</h4>
+                <h4 className="font-semibold text-lg text-gray-900">{job.customerName}</h4>
                 {deliveryType?.code && (
                   <span
-                    className="px-2 py-0.5 rounded text-xs font-bold inline-flex items-center gap-1 shadow-sm"
+                    className="px-2 py-1 rounded text-xs font-bold inline-flex items-center gap-1 shadow-sm"
                     style={{
                       backgroundColor: cardStyles.bg,
                       color: cardStyles.text,
@@ -526,126 +527,179 @@ export default function DriverMyRuns() {
                     {deliveryType.code}
                   </span>
                 )}
-                {job.driverStatus && (
-                  <Badge className={statusOption?.color || 'bg-gray-600'}>
-                    <StatusIcon className="h-3 w-3 mr-1" />
-                    {statusOption?.label || job.driverStatus}
-                  </Badge>
-                )}
               </div>
-              <p className="text-sm text-gray-600 mt-1">{job.deliveryTypeName}</p>
+              {job.driverStatus && (
+                <Badge className={`${statusOption?.color || 'bg-gray-600'} text-sm`}>
+                  <StatusIcon className="h-3 w-3 mr-1" />
+                  {statusOption?.label || job.driverStatus}
+                </Badge>
+              )}
             </div>
-            <Button
-              size="sm"
-              onClick={() => handleJobClick(job)}
-              variant="outline"
-            >
-              Details
-            </Button>
           </div>
 
+          {/* Location & Navigation - Prominent */}
+          {isToday && (
+            <Button
+              onClick={() => handleStartNavigation(job)}
+              className="w-full mb-3 bg-blue-600 hover:bg-blue-700 h-12 text-base font-semibold"
+              size="lg"
+            >
+              <Navigation className="h-5 w-5 mr-2" />
+              Navigate to Delivery
+            </Button>
+          )}
+
           <div className="space-y-2 mb-3">
-            <div className="flex items-start gap-2 text-sm">
-              <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
-              <span className="text-gray-700">{job.deliveryLocation}</span>
+            <div className="flex items-start gap-2 p-2 bg-blue-50 rounded-lg">
+              <MapPin className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-900">{job.deliveryLocation}</span>
             </div>
 
             {job.assignment && (
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded">
                 <Clock className="h-4 w-4 text-gray-500" />
-                <span className="text-gray-700">
+                <span className="font-medium text-gray-700">
                   {job.assignment.timeSlotId.replace(/-/g, ' ').toUpperCase()}
                 </span>
               </div>
             )}
 
             {job.sqm && (
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded">
                 <Package className="h-4 w-4 text-gray-500" />
-                <span className="text-gray-700">{job.sqm.toLocaleString()} m²</span>
-              </div>
-            )}
-
-            {job.siteContactName && (
-              <div className="text-sm text-gray-600 bg-gray-50 rounded p-2">
-                <strong>Contact:</strong> {job.siteContactName} - {job.siteContactPhone}
+                <span className="font-medium text-gray-700">{job.sqm.toLocaleString()} m²</span>
               </div>
             )}
 
             {job.isDifficultDelivery && (
-              <Badge className="bg-orange-500 text-white">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                Difficult Delivery
+              <Badge className="bg-orange-500 text-white w-full justify-center py-2">
+                <AlertTriangle className="h-4 w-4 mr-1" />
+                Difficult Delivery - Exercise Caution
               </Badge>
             )}
           </div>
 
+          {/* Contact Info - Large and Accessible */}
+          {job.siteContactName && (
+            <div className="mb-3 p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+              <p className="text-xs text-gray-600 mb-2 font-semibold">Site Contact</p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 truncate">{job.siteContactName}</p>
+                  <p className="text-sm text-gray-700 font-mono">{job.siteContactPhone}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 h-10 w-10 p-0"
+                    onClick={() => window.open(`tel:${job.siteContactPhone}`, '_self')}
+                  >
+                    <Phone className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-10 w-10 p-0"
+                    onClick={() => window.open(`sms:${job.siteContactPhone}`, '_self')}
+                  >
+                    <MessageSquare className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delivery Notes */}
+          {job.deliveryNotes && (
+            <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <FileText className="h-4 w-4 text-yellow-700 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-yellow-900 mb-1">Delivery Notes</p>
+                  <p className="text-sm text-yellow-800 whitespace-pre-wrap">{job.deliveryNotes}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons for Today's Jobs */}
           {isToday && (
             <>
               <Button
                 onClick={() => setPodDialogJob(job)}
-                className="w-full mb-2 bg-blue-600 hover:bg-blue-700"
+                className="w-full mb-2 bg-emerald-600 hover:bg-emerald-700 h-11"
                 disabled={!isOnline}
               >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Upload POD
+                <CheckCircle2 className="h-5 w-5 mr-2" />
+                Complete & Upload POD
               </Button>
 
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2 mb-2">
                 <Button
                   onClick={() => handleDelayToggle(job, 'pickup')}
                   variant={pickupDelayActive ? "default" : "outline"}
-                  className={`w-full ${pickupDelayActive ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                  className={`${pickupDelayActive ? 'bg-green-600 hover:bg-green-700' : ''}`}
                   disabled={!isOnline}
+                  size="sm"
                 >
-                  <TruckIcon className="h-4 w-4 mr-2" />
+                  <TruckIcon className="h-4 w-4 mr-1" />
                   {pickupDelayActive ? (
-                    <>
-                      En route <span className="ml-2 font-mono">(<DelayTimer startTime={pickupDelayActive.startTime} />)</span>
-                    </>
+                    <DelayTimer startTime={pickupDelayActive.startTime} />
                   ) : (
-                    'Delay at Pickup'
+                    'Pickup Delay'
                   )}
                 </Button>
 
                 <Button
                   onClick={() => handleDelayToggle(job, 'site')}
                   variant={siteDelayActive ? "default" : "outline"}
-                  className={`w-full ${siteDelayActive ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                  className={`${siteDelayActive ? 'bg-green-600 hover:bg-green-700' : ''}`}
                   disabled={!isOnline}
+                  size="sm"
                 >
-                  <Package className="h-4 w-4 mr-2" />
+                  <Package className="h-4 w-4 mr-1" />
                   {siteDelayActive ? (
-                    <>
-                      Unloading <span className="ml-2 font-mono">(<DelayTimer startTime={siteDelayActive.startTime} />)</span>
-                    </>
+                    <DelayTimer startTime={siteDelayActive.startTime} />
                   ) : (
-                    'Delay on Site'
+                    'Site Delay'
                   )}
                 </Button>
-
-                <Button
-                  onClick={() => handleStatusUpdate(job, 'PROBLEM')}
-                  variant={job.driverStatus === 'PROBLEM' ? "default" : "outline"}
-                  className={`w-full ${job.driverStatus === 'PROBLEM' ? 'bg-red-600 hover:bg-red-700' : ''}`}
-                  disabled={!isOnline}
-                >
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                  Problem
-                </Button>
               </div>
+
+              <Button
+                onClick={() => handleStatusUpdate(job, 'PROBLEM')}
+                variant={job.driverStatus === 'PROBLEM' ? "default" : "outline"}
+                className={`w-full ${job.driverStatus === 'PROBLEM' ? 'bg-red-600 hover:bg-red-700' : 'border-red-300 text-red-600'}`}
+                disabled={!isOnline}
+                size="sm"
+              >
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Report Problem
+              </Button>
+
+              <Button
+                onClick={() => handleJobClick(job)}
+                variant="ghost"
+                className="w-full mt-2"
+                size="sm"
+              >
+                View Full Details
+              </Button>
             </>
           )}
 
+          {/* Problem Status */}
           {job.driverStatus === 'PROBLEM' && job.problemDetails && (
-            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-              <strong>Problem:</strong> {job.problemDetails}
+            <div className="mt-2 p-3 bg-red-50 border-2 border-red-300 rounded text-sm text-red-800">
+              <strong className="block mb-1">Problem Reported:</strong>
+              {job.problemDetails}
             </div>
           )}
 
+          {/* Delivered Status */}
           {job.status === 'DELIVERED' && (
-            <Badge className="w-full justify-center mt-2 bg-green-600 text-white">
-              <CheckCircle2 className="h-3 w-3 mr-1" />
+            <Badge className="w-full justify-center mt-2 bg-green-600 text-white py-2 text-sm">
+              <CheckCircle2 className="h-4 w-4 mr-1" />
               DELIVERY COMPLETED
             </Badge>
           )}
@@ -655,52 +709,70 @@ export default function DriverMyRuns() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            My Runs
+    <div className="space-y-4 pb-6">
+      {/* Mobile-First Header - Sticky */}
+      <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-blue-700 -mx-6 -mt-6 px-6 py-4 shadow-lg mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <TruckIcon className="h-6 w-6 text-white" />
+            <h1 className="text-xl font-bold text-white">My Runs</h1>
             {!isOnline && (
-              <Badge className="bg-orange-500 text-white">
+              <Badge className="bg-orange-500 text-white border-orange-400">
                 <WifiOff className="h-3 w-3 mr-1" />
                 Offline
               </Badge>
             )}
-          </h1>
-          <div className="flex items-center gap-3 mt-1">
-            <Select
-              value={currentUser.truck || ''}
-              onValueChange={handleTruckChange}
-              disabled={changingTruck || !isOnline}
-            >
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Select truck" />
-              </SelectTrigger>
-              <SelectContent>
-                {trucks.map((truck) => (
-                  <SelectItem key={truck.id} value={truck.id}>
-                    {truck.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!isOnline && jobs.length > 0 && (
-              <span className="text-sm text-gray-600">Showing cached schedule</span>
-            )}
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <DeliveryTypeLegend />
           <Button
             onClick={handleRefresh}
             variant="outline"
             size="sm"
             disabled={!isOnline || refreshing}
+            className="bg-white/10 border-white/30 text-white hover:bg-white/20"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
+        
+        <div className="flex items-center gap-2">
+          <Select
+            value={currentUser.truck || ''}
+            onValueChange={handleTruckChange}
+            disabled={changingTruck || !isOnline}
+          >
+            <SelectTrigger className="bg-white/10 border-white/30 text-white">
+              <SelectValue placeholder="Select truck" />
+            </SelectTrigger>
+            <SelectContent>
+              {trucks.map((truck) => (
+                <SelectItem key={truck.id} value={truck.id}>
+                  {truck.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {!isOnline && jobs.length > 0 && (
+            <span className="text-xs text-white/80">Cached</span>
+          )}
+        </div>
+
+        {/* Today's Summary */}
+        {currentUser?.truck && todayJobs.length > 0 && (
+          <div className="mt-3 flex gap-3 text-white">
+            <div className="flex items-center gap-1 text-sm">
+              <Package className="h-4 w-4" />
+              <span className="font-semibold">{todayJobs.length}</span>
+              <span className="text-white/80">deliveries</span>
+            </div>
+            <div className="flex items-center gap-1 text-sm">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="font-semibold">
+                {todayJobs.filter(j => j.type === 'job' && j.status === 'DELIVERED').length}
+              </span>
+              <span className="text-white/80">completed</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {!currentUser?.truck && (
@@ -727,88 +799,89 @@ export default function DriverMyRuns() {
         </Card>
       )}
 
-      <LocationTracker />
+      {/* GPS Tracking Banner */}
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-sm font-medium text-green-900">GPS Tracking Active</span>
+          </div>
+          <LocationTracker compact={true} />
+        </div>
+        <p className="text-xs text-green-700 mt-1 ml-4">Your location is being tracked for dispatcher visibility</p>
+      </div>
 
       {/* Today's Jobs */}
       {currentUser?.truck && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Today's Deliveries ({todayJobs.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {todayJobs.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No deliveries scheduled for today</p>
-            ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {todayJobs.map(item => 
-                  item.type === 'placeholder' ? (
-                    <PlaceholderCard key={`placeholder-${item.id}`} placeholder={item} />
-                  ) : (
-                    <JobCard key={item.id} job={item} isToday={true} />
-                  )
-                )}
+        <div>
+          {todayJobs.length === 0 ? (
+            <Card className="border-gray-200">
+              <CardContent className="p-8 text-center">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500 font-medium">No deliveries scheduled for today</p>
+                <p className="text-sm text-gray-400 mt-1">Check tomorrow's schedule below</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-blue-600" />
+                  Today's Deliveries
+                </h2>
+                <DeliveryTypeLegend />
               </div>
-            )}
-          </CardContent>
-        </Card>
+              {todayJobs.map(item => 
+                item.type === 'placeholder' ? (
+                  <PlaceholderCard key={`placeholder-${item.id}`} placeholder={item} />
+                ) : (
+                  <JobCard key={item.id} job={item} isToday={true} />
+                )
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Tomorrow's Jobs */}
       {currentUser?.truck && tomorrowJobs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Tomorrow's Deliveries ({tomorrowJobs.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4">
-              {tomorrowJobs.map(item =>
-                item.type === 'placeholder' ? (
-                  <PlaceholderCard key={`placeholder-${item.id}`} placeholder={item} />
-                ) : (
-                  <JobCard key={item.id} job={item} />
-                )
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 px-1">
+            <Calendar className="h-5 w-5 text-blue-600" />
+            Tomorrow's Schedule ({tomorrowJobs.length})
+          </h2>
+          {tomorrowJobs.map(item =>
+            item.type === 'placeholder' ? (
+              <PlaceholderCard key={`placeholder-${item.id}`} placeholder={item} />
+            ) : (
+              <JobCard key={item.id} job={item} />
+            )
+          )}
+        </div>
       )}
 
       {/* Upcoming Jobs */}
       {currentUser?.truck && upcomingDates.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Deliveries</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {upcomingDates.map(date => {
-                const dateJobs = getJobsForDate(date);
-                return (
-                  <div key={date}>
-                    <h3 className="font-semibold text-gray-900 mb-3">
-                      {format(parseISO(date), 'EEEE, MMMM d, yyyy')}
-                    </h3>
-                    <div className="grid grid-cols-1 gap-4">
-                      {dateJobs.map(item =>
-                        item.type === 'placeholder' ? (
-                          <PlaceholderCard key={`placeholder-${item.id}`} placeholder={item} />
-                        ) : (
-                          <JobCard key={item.id} job={item} />
-                        )
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold text-gray-900 px-1">Upcoming Schedule</h2>
+          {upcomingDates.map(date => {
+            const dateJobs = getJobsForDate(date);
+            return (
+              <div key={date} className="space-y-3">
+                <h3 className="font-semibold text-gray-700 px-1 text-sm">
+                  {format(parseISO(date), 'EEEE, MMMM d, yyyy')}
+                </h3>
+                {dateJobs.map(item =>
+                  item.type === 'placeholder' ? (
+                    <PlaceholderCard key={`placeholder-${item.id}`} placeholder={item} />
+                  ) : (
+                    <JobCard key={item.id} job={item} />
+                  )
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
       <JobDetailsDialog
