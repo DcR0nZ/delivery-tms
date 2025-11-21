@@ -23,11 +23,7 @@ import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from '../com
 
 
 const TRUCKS = [
-  { id: 'ACCO1', name: 'ACCO1', capacity: 14 },
-  { id: 'ACCO2', name: 'ACCO2', capacity: 14 },
-  { id: 'FUSO', name: 'FUSO', capacity: 9 },
-  { id: 'ISUZU', name: 'ISUZU', capacity: 9 },
-  { id: 'UD', name: 'UD', capacity: 9 }
+  { id: 'ACCO1', name: 'ACCO1', capacity: 14 }
 ];
 
 const TIME_SLOTS = [
