@@ -105,7 +105,7 @@ export default function SchedulingBoard() {
     try {
       const date = startOfDay(new Date(selectedDate));
       
-      const [allAvailableJobs, todaysAssignments, allDeliveryTypes, todaysPlaceholders, readStatusList, allPickupLocations] = await Promise.all([
+      const [allAvailableJobs, todaysAssignments, allDeliveryTypes, todaysPlaceholders, readStatusList, allPickupLocations, allTrucks] = await Promise.all([
         base44.entities.Job.filter({ 
           status: { $in: ['PENDING_APPROVAL', 'APPROVED', 'SCHEDULED', 'DELIVERED'] }
         }),
@@ -113,7 +113,8 @@ export default function SchedulingBoard() {
         base44.entities.DeliveryType.list(),
         base44.entities.Placeholder.filter({ date: format(date, 'yyyy-MM-dd') }),
         base44.entities.NotificationReadStatus.filter({ userId: currentUser.id }),
-        base44.entities.PickupLocation.list()
+        base44.entities.PickupLocation.list(),
+        base44.entities.Truck.filter({ status: 'ACTIVE' })
       ]);
 
       const currentTenant = currentUser.tenantId || 'plasterboard_dispatch';
