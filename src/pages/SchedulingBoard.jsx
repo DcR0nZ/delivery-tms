@@ -23,6 +23,8 @@ import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from '../com
 import { Link } from 'react-router-dom';
 import GlobalSearchBar from '../components/search/GlobalSearchBar';
 import AdvancedFilters from '../components/search/AdvancedFilters';
+import RouteOptimizer from '../components/scheduling/RouteOptimizer';
+import { TrendingUp } from 'lucide-react';
 
 export default function SchedulingBoard() {
   const [jobs, setJobs] = useState([]);
@@ -60,6 +62,7 @@ export default function SchedulingBoard() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [createPlaceholderOpen, setCreatePlaceholderOpen] = useState(false);
   const [placeholderSlot, setPlaceholderSlot] = useState(null);
+  const [routeOptimizerOpen, setRouteOptimizerOpen] = useState(false);
 
   const [notificationReadStatus, setNotificationReadStatus] = useState([]);
   const [unreadNotifications, setUnreadNotifications] = useState([]);
@@ -382,6 +385,15 @@ export default function SchedulingBoard() {
       !assignedJobIds.has(job.id) && 
       (job.status === 'APPROVED' || job.status === 'PENDING_APPROVAL') &&
       job.requestedDate === selectedDate
+    );
+    return applyAdvancedFilters(unscheduled);
+  };
+
+  const getAllUnscheduledJobs = () => {
+    const assignedJobIds = new Set(assignments.map(a => a.jobId));
+    const unscheduled = jobs.filter(job => 
+      !assignedJobIds.has(job.id) && 
+      (job.status === 'APPROVED' || job.status === 'PENDING_APPROVAL')
     );
     return applyAdvancedFilters(unscheduled);
   };
@@ -1026,6 +1038,16 @@ export default function SchedulingBoard() {
                   <Button variant="outline" size="sm" onClick={goToToday}>
                     Today
                   </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setRouteOptimizerOpen(true)}
+                    disabled={getAllUnscheduledJobs().length === 0}
+                    className="gap-2"
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="hidden sm:inline">Optimize Routes</span>
+                  </Button>
                   <Button size="sm" onClick={() => setCreateJobOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Create Job</span>
@@ -1079,6 +1101,18 @@ export default function SchedulingBoard() {
         slotPosition={placeholderSlot?.slotPosition}
         date={selectedDate}
         onCreated={fetchData}
+      />
+
+      <RouteOptimizer
+        open={routeOptimizerOpen}
+        onOpenChange={setRouteOptimizerOpen}
+        selectedDate={selectedDate}
+        trucks={trucks}
+        timeSlots={timeSlots}
+        unscheduledJobs={getAllUnscheduledJobs()}
+        deliveryTypes={deliveryTypes}
+        pickupLocations={pickupLocations}
+        onOptimizationApplied={fetchData}
       />
     </>
   );
