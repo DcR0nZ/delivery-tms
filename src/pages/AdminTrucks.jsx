@@ -24,7 +24,16 @@ export default function AdminTrucksPage() {
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [editingTruck, setEditingTruck] = useState(null);
   const [deletingTruck, setDeletingTruck] = useState(null);
-  const [formData, setFormData] = useState({ name: '', capacity: '' });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    capacity: '', 
+    length: '', 
+    height: '', 
+    tare: '', 
+    regoNextDue: '', 
+    nextService: '', 
+    notes: '' 
+  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -116,12 +125,30 @@ export default function AdminTrucksPage() {
   });
 
   const handleCreate = () => {
-    setFormData({ name: '', capacity: '' });
+    setFormData({ 
+      name: '', 
+      capacity: '', 
+      length: '', 
+      height: '', 
+      tare: '', 
+      regoNextDue: '', 
+      nextService: '', 
+      notes: '' 
+    });
     setCreateOpen(true);
   };
 
   const handleEdit = (truck) => {
-    setFormData({ name: truck.name, capacity: truck.capacity || '' });
+    setFormData({ 
+      name: truck.name, 
+      capacity: truck.capacity || '',
+      length: truck.length || '',
+      height: truck.height || '',
+      tare: truck.tare || '',
+      regoNextDue: truck.regoNextDue || '',
+      nextService: truck.nextService || '',
+      notes: truck.notes || ''
+    });
     setEditingTruck(truck);
   };
 
@@ -131,6 +158,12 @@ export default function AdminTrucksPage() {
     const data = {
       name: formData.name.trim(),
       capacity: formData.capacity ? parseFloat(formData.capacity) : undefined,
+      length: formData.length ? parseFloat(formData.length) : undefined,
+      height: formData.height ? parseFloat(formData.height) : undefined,
+      tare: formData.tare ? parseFloat(formData.tare) : undefined,
+      regoNextDue: formData.regoNextDue || undefined,
+      nextService: formData.nextService || undefined,
+      notes: formData.notes || undefined,
       status: 'ACTIVE'
     };
 
@@ -257,9 +290,69 @@ export default function AdminTrucksPage() {
                 <Input
                   id="capacity"
                   type="number"
+                  step="0.1"
                   value={formData.capacity}
                   onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                   placeholder="e.g., 14"
+                />
+              </div>
+              <div>
+                <Label htmlFor="length">Length (m)</Label>
+                <Input
+                  id="length"
+                  type="number"
+                  step="0.1"
+                  value={formData.length}
+                  onChange={(e) => setFormData({ ...formData, length: e.target.value })}
+                  placeholder="e.g., 8.5"
+                />
+              </div>
+              <div>
+                <Label htmlFor="height">Height (m)</Label>
+                <Input
+                  id="height"
+                  type="number"
+                  step="0.1"
+                  value={formData.height}
+                  onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                  placeholder="e.g., 3.2"
+                />
+              </div>
+              <div>
+                <Label htmlFor="tare">Tare (kg)</Label>
+                <Input
+                  id="tare"
+                  type="number"
+                  value={formData.tare}
+                  onChange={(e) => setFormData({ ...formData, tare: e.target.value })}
+                  placeholder="e.g., 5000"
+                />
+              </div>
+              <div>
+                <Label htmlFor="regoNextDue">Rego Next Due</Label>
+                <Input
+                  id="regoNextDue"
+                  type="date"
+                  value={formData.regoNextDue}
+                  onChange={(e) => setFormData({ ...formData, regoNextDue: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="nextService">Next Service</Label>
+                <Input
+                  id="nextService"
+                  type="date"
+                  value={formData.nextService}
+                  onChange={(e) => setFormData({ ...formData, nextService: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <Input
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Additional notes about this truck"
                 />
               </div>
             </div>
@@ -270,7 +363,16 @@ export default function AdminTrucksPage() {
                 onClick={() => {
                   setCreateOpen(false);
                   setEditingTruck(null);
-                  setFormData({ name: '', capacity: '' });
+                  setFormData({ 
+                    name: '', 
+                    capacity: '', 
+                    length: '', 
+                    height: '', 
+                    tare: '', 
+                    regoNextDue: '', 
+                    nextService: '', 
+                    notes: '' 
+                  });
                 }}
               >
                 Cancel
