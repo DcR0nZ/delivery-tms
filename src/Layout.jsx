@@ -130,6 +130,7 @@ const AdminNav = ({ collapsed, onNavigate }) => {
             <SubNavLink to={createPageUrl('AdminCustomers')} onClick={onNavigate}>Customers</SubNavLink>
             <SubNavLink to={createPageUrl('AdminUsers')} onClick={onNavigate}>System Users</SubNavLink>
             <SubNavLink to={createPageUrl('AdminTrucks')} onClick={onNavigate}>Trucks</SubNavLink>
+            <SubNavLink to={createPageUrl('AdminTimeSlots')} onClick={onNavigate}>Time Slots</SubNavLink>
             <SubNavLink to={createPageUrl('AdminPickupLocations')} onClick={onNavigate}>Pickup Locations</SubNavLink>
             <SubNavLink to={createPageUrl('AdminDeliveryTypes')} onClick={onNavigate}>Delivery Types</SubNavLink>
           </CollapsibleContent>
@@ -197,6 +198,7 @@ const DispatcherNav = ({ collapsed, onNavigate }) => {
             <SubNavLink to={createPageUrl('AdminJobs')} onClick={onNavigate}>All Jobs</SubNavLink>
             <SubNavLink to={createPageUrl('AdminCustomers')} onClick={onNavigate}>Customers</SubNavLink>
             <SubNavLink to={createPageUrl('AdminTrucks')} onClick={onNavigate}>Trucks</SubNavLink>
+            <SubNavLink to={createPageUrl('AdminTimeSlots')} onClick={onNavigate}>Time Slots</SubNavLink>
             <SubNavLink to={createPageUrl('AdminPickupLocations')} onClick={onNavigate}>Pickup Locations</SubNavLink>
             <SubNavLink to={createPageUrl('AdminDeliveryTypes')} onClick={onNavigate}>Delivery Types</SubNavLink>
           </CollapsibleContent>

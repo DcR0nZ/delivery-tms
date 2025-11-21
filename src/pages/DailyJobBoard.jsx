@@ -13,22 +13,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from '../components/scheduling/DeliveryTypeColorUtils';
 import DeliveryTypeLegend from '../components/scheduling/DeliveryTypeLegend';
 
-const TRUCKS = [
-  { id: 'ACCO1', name: 'ACCO1' },
-  { id: 'ACCO2', name: 'ACCO2' },
-  { id: 'FUSO', name: 'FUSO' },
-  { id: 'ISUZU', name: 'ISUZU' },
-  { id: 'UD', name: 'UD' }
-];
-
-const TIME_SLOTS = [
-  { id: 'first-am', label: '6-8am (1st AM)', color: 'bg-blue-100' },
-  { id: 'second-am', label: '8-10am (2nd AM)', color: 'bg-green-100' },
-  { id: 'lunch', label: '10am-12pm (LUNCH)', color: 'bg-yellow-100' },
-  { id: 'first-pm', label: '12-2pm (1st PM)', color: 'bg-orange-100' },
-  { id: 'second-pm', label: '2-4pm (2nd PM)', color: 'bg-purple-100' }
-];
-
 const COLOR_OPTIONS = {
   gray: { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-300' },
   blue: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
@@ -85,6 +69,18 @@ export default function DailyJobBoard() {
   const { data: pickupLocations = [] } = useQuery({
     queryKey: ['pickupLocations'],
     queryFn: () => base44.entities.PickupLocation.list(),
+    staleTime: 60000,
+  });
+
+  const { data: trucks = [] } = useQuery({
+    queryKey: ['trucks'],
+    queryFn: () => base44.entities.Truck.filter({ status: 'ACTIVE' }),
+    staleTime: 60000,
+  });
+
+  const { data: timeSlots = [] } = useQuery({
+    queryKey: ['timeSlots'],
+    queryFn: () => base44.entities.TimeSlot.filter({ status: 'ACTIVE' }, 'order', 100),
     staleTime: 60000,
   });
 

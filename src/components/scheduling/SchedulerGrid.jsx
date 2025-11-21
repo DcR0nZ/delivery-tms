@@ -10,14 +10,6 @@ import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from './Deli
 import JobDetailsDialog from './JobDetailsDialog';
 import PlaceholderBlock from './PlaceholderBlock';
 
-const TIME_SLOTS = [
-  { id: 'first-am', label: '6-8am (1st AM)', color: 'bg-blue-100' },
-  { id: 'second-am', label: '8-10am (2nd AM)', color: 'bg-green-100' },
-  { id: 'lunch', label: '10am-12pm (LUNCH)', color: 'bg-yellow-100' },
-  { id: 'first-pm', label: '12-2pm (1st PM)', color: 'bg-orange-100' },
-  { id: 'second-pm', label: '2-4pm (2nd PM)', color: 'bg-purple-100' }
-];
-
 // Helper function to parse and format address
 const parseAddress = (address) => {
   if (!address) return { unit: '', street: '', suburb: '' };
@@ -368,7 +360,7 @@ const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLoca
 
 export default function SchedulerGrid({
   trucks,
-  timeSlots,
+  timeSlots = [],
   jobs,
   assignments,
   placeholders,

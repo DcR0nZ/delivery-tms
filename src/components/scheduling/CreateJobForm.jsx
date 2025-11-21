@@ -13,22 +13,6 @@ import { extractJobDataWithGemini } from '@/functions/extractJobDataWithGemini';
 import { sendToZapier } from '@/functions/sendToZapier';
 
 
-const TRUCKS = [
-  { id: 'ACCO1', name: 'ACCO1' },
-  { id: 'ACCO2', name: 'ACCO2' },
-  { id: 'FUSO', name: 'FUSO' },
-  { id: 'ISUZU', name: 'ISUZU' },
-  { id: 'UD', name: 'UD' }
-];
-
-const DELIVERY_WINDOWS = [
-  { id: 'first-am', label: '6-8am (1st AM)' },
-  { id: 'second-am', label: '8-10am (2nd AM)' },
-  { id: 'lunch', label: '10am-12pm (LUNCH)' },
-  { id: 'first-pm', label: '12-2pm (1st PM)' },
-  { id: 'second-pm', label: '2-4pm (2nd PM)' }
-];
-
 export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
   const [customers, setCustomers] = useState([]);
   const [deliveryTypes, setDeliveryTypes] = useState([]);
@@ -81,6 +65,8 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
   const [extractedDocumentUrl, setExtractedDocumentUrl] = useState(null);
   const [useZapierExtraction, setUseZapierExtraction] = useState(false);
   const [extractionSessionId, setExtractionSessionId] = useState(null);
+  const [trucks, setTrucks] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
   
   const { toast } = useToast();
 
@@ -88,16 +74,20 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
     if (open) {
       const fetchData = async () => {
         setLoading(true);
-        const [customers, types, locations, user] = await Promise.all([
+        const [customers, types, locations, user, trucksData, timeSlotsData] = await Promise.all([
           base44.entities.Customer.filter({ status: 'ACTIVE' }),
           base44.entities.DeliveryType.list(),
           base44.entities.PickupLocation.filter({ status: 'ACTIVE' }),
-          base44.auth.me()
+          base44.auth.me(),
+          base44.entities.Truck.filter({ status: 'ACTIVE' }),
+          base44.entities.TimeSlot.filter({ status: 'ACTIVE' }, 'order', 100)
         ]);
         setCustomers(customers);
         setDeliveryTypes(types);
         setPickupLocations(locations);
         setCurrentUser(user);
+        setTrucks(trucksData);
+        setTimeSlots(timeSlotsData);
         setLoading(false);
       };
       fetchData();
@@ -411,7 +401,7 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
             jobId: newJob.id,
             customerEmail: selectedCustomer.contactEmail,
             customerName: selectedCustomer.customerName,
-            truckName: TRUCKS.find(t => t.id === formData.scheduleTruckId)?.name || 'Unknown Truck',
+            truckName: trucks.find(t => t.id === formData.scheduleTruckId)?.name || 'Unknown Truck',
             date: formData.scheduleDate,
             timeSlot: formData.scheduleTimeSlot
           });
@@ -596,8 +586,8 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
                     <Select name="deliveryWindow" onValueChange={(value) => handleSelectChange('deliveryWindow', value)} value={formData.deliveryWindow}>
                       <SelectTrigger id="deliveryWindow"><SelectValue placeholder="Select delivery window..." /></SelectTrigger>
                       <SelectContent>
-                        {DELIVERY_WINDOWS.map(window => (
-                          <SelectItem key={window.id} value={window.id}>{window.label}</SelectItem>
+                        {timeSlots.map(slot => (
+                          <SelectItem key={slot.id} value={slot.id}>{slot.label}</SelectItem>
                         ))}
                         <SelectItem value="Any Time">Any Time</SelectItem>
                       </SelectContent>
@@ -614,7 +604,7 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
                         <Select name="scheduleTruckId" onValueChange={(value) => handleSelectChange('scheduleTruckId', value)} value={formData.scheduleTruckId}>
                           <SelectTrigger id="scheduleTruckId"><SelectValue placeholder="Select truck..." /></SelectTrigger>
                           <SelectContent>
-                            {TRUCKS.map(truck => <SelectItem key={truck.id} value={truck.id}>{truck.name}</SelectItem>)}
+                            {trucks.map(truck => <SelectItem key={truck.id} value={truck.id}>{truck.name}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
@@ -627,7 +617,7 @@ export default function CreateJobForm({ open, onOpenChange, onJobCreated }) {
                         <Select name="scheduleTimeSlot" onValueChange={(value) => handleSelectChange('scheduleTimeSlot', value)} value={formData.scheduleTimeSlot}>
                           <SelectTrigger id="scheduleTimeSlot"><SelectValue placeholder="Select slot..." /></SelectTrigger>
                           <SelectContent>
-                            {DELIVERY_WINDOWS.map(window => <SelectItem key={window.id} value={window.id}>{window.label}</SelectItem>)}
+                            {timeSlots.map(slot => <SelectItem key={slot.id} value={slot.id}>{slot.label}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>

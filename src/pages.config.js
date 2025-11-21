@@ -15,6 +15,7 @@ import TestEmails from './pages/TestEmails';
 import Reports from './pages/Reports';
 import LiveTracking from './pages/LiveTracking';
 import AdminTrucks from './pages/AdminTrucks';
+import AdminTimeSlots from './pages/AdminTimeSlots';
 import __Layout from './Layout.jsx';
 
 
@@ -36,6 +37,7 @@ export const PAGES = {
     "Reports": Reports,
     "LiveTracking": LiveTracking,
     "AdminTrucks": AdminTrucks,
+    "AdminTimeSlots": AdminTimeSlots,
 }
 
 export const pagesConfig = {

@@ -40,6 +40,7 @@ export default function SchedulingBoard() {
   const [deliveryTypes, setDeliveryTypes] = useState([]);
   const [pickupLocations, setPickupLocations] = useState([]);
   const [trucks, setTrucks] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
   
   // Get initial date from URL or default to today
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -105,7 +106,7 @@ export default function SchedulingBoard() {
     try {
       const date = startOfDay(new Date(selectedDate));
       
-      const [allAvailableJobs, todaysAssignments, allDeliveryTypes, todaysPlaceholders, readStatusList, allPickupLocations, allTrucks] = await Promise.all([
+      const [allAvailableJobs, todaysAssignments, allDeliveryTypes, todaysPlaceholders, readStatusList, allPickupLocations, allTrucks, allTimeSlots] = await Promise.all([
         base44.entities.Job.filter({ 
           status: { $in: ['PENDING_APPROVAL', 'APPROVED', 'SCHEDULED', 'DELIVERED'] }
         }),
@@ -114,7 +115,8 @@ export default function SchedulingBoard() {
         base44.entities.Placeholder.filter({ date: format(date, 'yyyy-MM-dd') }),
         base44.entities.NotificationReadStatus.filter({ userId: currentUser.id }),
         base44.entities.PickupLocation.list(),
-        base44.entities.Truck.filter({ status: 'ACTIVE' })
+        base44.entities.Truck.filter({ status: 'ACTIVE' }),
+        base44.entities.TimeSlot.filter({ status: 'ACTIVE' }, 'order', 100)
       ]);
 
       const currentTenant = currentUser.tenantId || 'plasterboard_dispatch';
@@ -145,6 +147,7 @@ export default function SchedulingBoard() {
       setNotificationReadStatus(readStatusList);
       setPickupLocations(allPickupLocations);
       setTrucks(allTrucks);
+      setTimeSlots(allTimeSlots);
 
       const assignedJobIds = new Set(visibleJobs.filter(j => 
         j.status === 'SCHEDULED' || 
@@ -592,7 +595,7 @@ export default function SchedulingBoard() {
                           <p className="text-sm text-gray-500 text-center py-4">No jobs scheduled</p>
                         ) : (
                           <>
-                            {TIME_SLOTS.map(timeSlot => {
+                            {timeSlots.map(timeSlot => {
                               const slotJobs = truckJobs.filter(item => item.timeSlot === timeSlot.id);
                               if (slotJobs.length === 0) return null;
 
@@ -943,7 +946,7 @@ export default function SchedulingBoard() {
                 
                 <SchedulerGrid
                   trucks={trucks}
-                  timeSlots={TIME_SLOTS}
+                  timeSlots={timeSlots}
                   jobs={jobs}
                   assignments={assignments}
                   placeholders={placeholders}
