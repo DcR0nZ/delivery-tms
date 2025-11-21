@@ -22,9 +22,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from '../components/scheduling/DeliveryTypeColorUtils';
 
 
-const TRUCKS = [
-  { id: 'ACCO1', name: 'ACCO1', capacity: 14 }
-];
+
 
 const TIME_SLOTS = [
   { id: 'first-am', label: '6-8am (1st AM)' },
@@ -41,6 +39,7 @@ export default function SchedulingBoard() {
   const [placeholders, setPlaceholders] = useState([]);
   const [deliveryTypes, setDeliveryTypes] = useState([]);
   const [pickupLocations, setPickupLocations] = useState([]);
+  const [trucks, setTrucks] = useState([]);
   
   // Get initial date from URL or default to today
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -144,6 +143,7 @@ export default function SchedulingBoard() {
       setPlaceholders(todaysPlaceholders);
       setNotificationReadStatus(readStatusList);
       setPickupLocations(allPickupLocations);
+      setTrucks(allTrucks);
 
       const assignedJobIds = new Set(visibleJobs.filter(j => 
         j.status === 'SCHEDULED' || 
@@ -554,7 +554,7 @@ export default function SchedulingBoard() {
                   </Card>
                 )}
 
-                {TRUCKS.map(truck => {
+                {trucks.map(truck => {
                   const truckJobs = getJobsForTruck(truck.id);
                   const totalSqm = getTruckUtilization(truck.id);
                   const utilizationPercent = Math.min((totalSqm / 2500) * 100, 100); 
@@ -941,7 +941,7 @@ export default function SchedulingBoard() {
               <div className="flex-1 overflow-auto">
                 
                 <SchedulerGrid
-                  trucks={TRUCKS}
+                  trucks={trucks}
                   timeSlots={TIME_SLOTS}
                   jobs={jobs}
                   assignments={assignments}

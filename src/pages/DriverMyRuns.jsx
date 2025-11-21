@@ -45,6 +45,7 @@ export default function DriverMyRuns() {
   const [delayDescription, setDelayDescription] = useState('');
   const [activeDelays, setActiveDelays] = useState({}); // { jobId: { type, startTime, description } }
   const [podDialogJob, setPodDialogJob] = useState(null);
+  const [trucks, setTrucks] = useState([]);
 
   const { toast } = useToast();
   const { isOnline, cacheJobs, cacheAssignments, getCachedJobs, getCachedAssignments } = useOffline();
@@ -74,6 +75,10 @@ export default function DriverMyRuns() {
             }),
             base44.entities.Placeholder.list()
           ]);
+
+          // Fetch available trucks
+          const allTrucks = await base44.entities.Truck.filter({ status: 'ACTIVE' });
+          setTrucks(allTrucks);
 
           // Cache for offline use
           await cacheAssignments(allAssignments);
@@ -672,11 +677,11 @@ export default function DriverMyRuns() {
                 <SelectValue placeholder="Select truck" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ACCO1">ACCO1</SelectItem>
-                <SelectItem value="ACCO2">ACCO2</SelectItem>
-                <SelectItem value="FUSO">FUSO</SelectItem>
-                <SelectItem value="ISUZU">ISUZU</SelectItem>
-                <SelectItem value="UD">UD</SelectItem>
+                {trucks.map((truck) => (
+                  <SelectItem key={truck.id} value={truck.id}>
+                    {truck.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {!isOnline && jobs.length > 0 && (
