@@ -253,7 +253,7 @@ export default function AdminTrucksPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="capacity">Capacity (m² or pallets)</Label>
+                <Label htmlFor="capacity">Capacity (t)</Label>
                 <Input
                   id="capacity"
                   type="number"
