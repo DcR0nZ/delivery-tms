@@ -314,7 +314,7 @@ export default function DailyJobBoard() {
         ) : (
           <div className="px-4 py-4 pb-24">
             <div className="space-y-4">
-              {TIME_SLOTS.map((slot) => {
+              {timeSlots.map((slot) => {
                 const slotJobs = getJobsForTimeSlot(slot.id);
                 const slotPlaceholders = getPlaceholdersForTimeSlot(slot.id);
                 const totalItemsInSlot = slotJobs.length + slotPlaceholders.length;
@@ -548,7 +548,7 @@ export default function DailyJobBoard() {
         ) : (
           <div className="px-4 md:px-6 py-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {TIME_SLOTS.map((slot) => {
+              {timeSlots.map((slot) => {
                 const slotJobs = getJobsForTimeSlot(slot.id);
                 const slotPlaceholders = getPlaceholdersForTimeSlot(slot.id);
                 const totalItemsInSlot = slotJobs.length + slotPlaceholders.length;
