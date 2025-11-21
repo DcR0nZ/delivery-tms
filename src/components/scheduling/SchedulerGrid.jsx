@@ -6,6 +6,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from './DeliveryTypeColorUtils';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { createPageUrl } from '@/utils';
 
 import JobDetailsDialog from './JobDetailsDialog';
 import PlaceholderBlock from './PlaceholderBlock';
@@ -446,6 +448,35 @@ export default function SchedulerGrid({
   const unscheduledJobs = getUnscheduledJobs();
   const canCreatePlaceholder = currentUser && (currentUser.role === 'admin' || currentUser.appRole === 'dispatcher');
 
+  // Check if time slots are configured
+  if (!timeSlots || timeSlots.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-50 p-6">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-6 w-6 text-blue-600" />
+              Configuration Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-gray-600">
+              No delivery time slots have been configured yet. Please set up your time slots to start scheduling.
+            </p>
+            {canCreatePlaceholder && (
+              <a href={createPageUrl('AdminTimeSlots')}>
+                <Button className="w-full">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Configure Time Slots
+                </Button>
+              </a>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="w-full h-full overflow-auto">
@@ -507,7 +538,7 @@ export default function SchedulerGrid({
             <span className="font-semibold text-xs">Truck</span>
           </div>
           <div className="flex flex-1">
-            {TIME_SLOTS.map((slot) => {
+            {timeSlots.map((slot) => {
               return (
                 <div
                   key={slot.id}
@@ -557,7 +588,7 @@ export default function SchedulerGrid({
                 </div>
 
                 <div className="flex flex-1 relative">
-                  {TIME_SLOTS.map((slot) => {
+                  {timeSlots.map((slot) => {
                     // Get all jobs for this time slot (both blocks)
                     const allJobsInSlot = [1, 3].flatMap((blockStart) => 
                       getJobsForCell(truck.id, slot.id, blockStart)

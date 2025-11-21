@@ -147,7 +147,7 @@ export default function DailyJobBoard() {
     const dateFilteredAndVisibleJobs = visibleJobs.filter((job) => job.requestedDate === selectedDate);
 
     const newJobsByTruck = {};
-    TRUCKS.forEach((truck) => {
+    trucks.forEach((truck) => {
       newJobsByTruck[truck.id] = [];
     });
     newJobsByTruck['UNASSIGNED'] = [];
@@ -175,7 +175,7 @@ export default function DailyJobBoard() {
       newJobsByTruck[truckId].sort((a, b) => {
         if (!a.assignment) return 1;
         if (!b.assignment) return -1;
-        const slotOrder = TIME_SLOTS.map(slot => slot.id);
+        const slotOrder = timeSlots.map(slot => slot.id);
         return slotOrder.indexOf(a.assignment.timeSlotId) - slotOrder.indexOf(b.assignment.timeSlotId);
       });
     });
@@ -244,6 +244,35 @@ export default function DailyJobBoard() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Check if time slots are configured
+  if (!loading && timeSlots.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 p-6">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-6 w-6 text-blue-600" />
+              Configuration Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-gray-600">
+              No delivery time slots have been configured yet. Please set up your time slots to view the daily schedule.
+            </p>
+            {(currentUser?.role === 'admin' || currentUser?.appRole === 'dispatcher') && (
+              <a href={createPageUrl('AdminTimeSlots')}>
+                <Button className="w-full">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Configure Time Slots
+                </Button>
+              </a>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   }

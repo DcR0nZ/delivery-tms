@@ -20,17 +20,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
 import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from '../components/scheduling/DeliveryTypeColorUtils';
-
-
-
-
-const TIME_SLOTS = [
-  { id: 'first-am', label: '6-8am (1st AM)' },
-  { id: 'second-am', label: '8-10am (2nd AM)' },
-  { id: 'lunch', label: '10am-12pm (LUNCH)' },
-  { id: 'first-pm', label: '12-2pm (1st PM)' },
-  { id: 'second-pm', label: '2-4pm (2nd PM)' },
-];
+import { Link } from 'react-router-dom';
 
 export default function SchedulingBoard() {
   const [jobs, setJobs] = useState([]);
@@ -413,6 +403,33 @@ export default function SchedulingBoard() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Check if time slots are configured
+  if (!loading && timeSlots.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 p-6">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-6 w-6 text-blue-600" />
+              Configuration Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-gray-600">
+              No delivery time slots have been configured yet. Please set up your time slots to start scheduling jobs.
+            </p>
+            <Link to={createPageUrl('AdminTimeSlots')}>
+              <Button className="w-full">
+                <Clock className="h-4 w-4 mr-2" />
+                Configure Time Slots
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
