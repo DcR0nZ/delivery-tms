@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Activity, AlertCircle, Navigation as NavigationIcon, Zap } from 'lucide-react';
 
-export default function LocationTracker({ trackingType = 'driver', updateInterval = 10000 }) {
+export default function LocationTracker({ trackingType = 'driver', updateInterval = 10000, compact = false }) {
   const [tracking, setTracking] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [error, setError] = useState(null);
@@ -83,6 +83,20 @@ export default function LocationTracker({ trackingType = 'driver', updateInterva
   };
 
   const trackingLabel = trackingType === 'machine' ? 'Machine Tracking' : 'Driver Tracking';
+
+  if (compact) {
+    return tracking ? (
+      <Badge variant="outline" className="bg-green-50 border-green-300 text-green-700">
+        <Activity className="h-3 w-3 mr-1 animate-pulse" />
+        Live
+      </Badge>
+    ) : (
+      <Badge variant="outline" className="bg-gray-100 border-gray-300 text-gray-600">
+        <MapPin className="h-3 w-3 mr-1" />
+        Inactive
+      </Badge>
+    );
+  }
 
   return (
     <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
