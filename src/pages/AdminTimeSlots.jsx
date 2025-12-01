@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Clock, Plus, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useToast } from '@/components/ui/use-toast';
 import {
   AlertDialog,
@@ -47,14 +48,26 @@ export default function AdminTimeSlotsPage() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [user, setUser] = useState(null);
+  const [localSlots, setLocalSlots] = useState([]);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser);
+  }, []);
 
   const { data: timeSlots = [], isLoading } = useQuery({
     queryKey: ['timeSlots'],
     queryFn: () => base44.entities.TimeSlot.list({ sort: { order: 1 } }),
   });
 
+  useEffect(() => {
+    if (timeSlots.length > 0) {
+      setLocalSlots(timeSlots);
+    }
+  }, [timeSlots]);
+
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.TimeSlot.create(data),
+    mutationFn: (data) => base44.entities.TimeSlot.create({ ...data, tenantId: user?.tenantId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeSlots'] });
       setCreateOpen(false);
@@ -134,6 +147,33 @@ export default function AdminTimeSlotsPage() {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async (newOrder) => {
+      const updates = newOrder.map((item, index) => 
+        base44.entities.TimeSlot.update(item.id, { order: index + 1 })
+      );
+      await Promise.all(updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['timeSlots'] });
+      toast({
+        title: "Order Updated",
+        description: "Time slots reordered successfully.",
+      });
+    }
+  });
+
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const items = Array.from(localSlots);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setLocalSlots(items);
+    reorderMutation.mutate(items);
+  };
+
   const handleCreate = () => {
     const nextOrder = timeSlots.length > 0 ? Math.max(...timeSlots.map(s => s.order || 0)) + 1 : 1;
     setFormData({ 
@@ -200,61 +240,78 @@ export default function AdminTimeSlotsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {timeSlots.map((slot) => (
-          <Card key={slot.id} className={slot.status === 'INACTIVE' ? 'opacity-60' : ''}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  <span>{slot.label}</span>
-                </div>
-                <Badge variant={slot.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                  {slot.status}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={`mb-3 p-2 rounded ${slot.color}`}>
-                <p className="text-xs text-gray-600">Display Color</p>
-              </div>
-              <p className="text-sm text-gray-600 mb-1">
-                Time: {slot.startTime} - {slot.endTime}
-              </p>
-              <p className="text-sm text-gray-600 mb-3">
-                Order: {slot.order}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEdit(slot)}
-                  className="flex-1"
-                >
-                  <Pencil className="h-3 w-3 mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => toggleStatusMutation.mutate({ id: slot.id, slot })}
-                  className="flex-1"
-                >
-                  {slot.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDeletingSlot(slot)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="timeSlots">
+          {(provided) => (
+            <div 
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className="space-y-3"
+            >
+              {localSlots.map((slot, index) => (
+                <Draggable key={slot.id} draggableId={slot.id} index={index}>
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      className={`bg-white p-4 rounded-lg border shadow-sm flex items-center justify-between ${slot.status === 'INACTIVE' ? 'opacity-60' : ''}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600">
+                          <GripVertical className="h-5 w-5" />
+                        </div>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${slot.color || 'bg-gray-100'}`}>
+                          <Clock className="h-5 w-5 text-gray-700" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-gray-900">{slot.label}</h3>
+                            <Badge variant={slot.status === 'ACTIVE' ? 'default' : 'secondary'} className="text-xs">
+                              {slot.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            {slot.startTime} - {slot.endTime} • Order: {slot.order}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEdit(slot)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Pencil className="h-4 w-4 text-gray-500" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleStatusMutation.mutate({ id: slot.id, slot })}
+                          className="h-8 w-8 p-0"
+                          title={slot.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${slot.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setDeletingSlot(slot)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
 
       {timeSlots.length === 0 && (
         <Card>
