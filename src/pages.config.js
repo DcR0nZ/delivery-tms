@@ -16,6 +16,7 @@ import Reports from './pages/Reports';
 import LiveTracking from './pages/LiveTracking';
 import AdminTrucks from './pages/AdminTrucks';
 import AdminTimeSlots from './pages/AdminTimeSlots';
+import Map from './pages/Map';
 import __Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "LiveTracking": LiveTracking,
     "AdminTrucks": AdminTrucks,
     "AdminTimeSlots": AdminTimeSlots,
+    "Map": Map,
 }
 
 export const pagesConfig = {
