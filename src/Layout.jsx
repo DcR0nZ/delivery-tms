@@ -29,7 +29,8 @@ import {
   PanelLeftClose,
   PanelLeft,
   Home,
-  BarChart3
+  BarChart3,
+  Map as MapIcon
 } from 'lucide-react';
 
 import ChatWidget from './components/chat/ChatWidget';
@@ -255,8 +256,9 @@ const ManagerNav = ({ collapsed, onNavigate }) => {
     <>
       <NavLink to={createPageUrl('Dashboard')} icon={Home} collapsed={collapsed} onClick={onNavigate}>Dashboard</NavLink>
       <NavLink to={createPageUrl('DailyJobBoard')} icon={Calendar} collapsed={collapsed} onClick={onNavigate}>Daily Job Board</NavLink>
+      <NavLink to={createPageUrl('Map')} icon={MapIcon} collapsed={collapsed} onClick={onNavigate}>Map</NavLink>
       <NavLink to={createPageUrl('Reports')} icon={BarChart3} collapsed={collapsed} onClick={onNavigate}>Reports</NavLink>
-      
+
       {!collapsed ? (
         <Collapsible open={libraryOpen} onOpenChange={setLibraryOpen}>
           <CollapsibleTrigger asChild>
