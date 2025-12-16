@@ -11,6 +11,8 @@ import JobDetailsDialog from '../components/scheduling/JobDetailsDialog';
 import { base44 } from '@/api/base44Client';
 import GlobalSearchBar from '../components/search/GlobalSearchBar';
 import AdvancedFilters from '../components/search/AdvancedFilters';
+import PullToRefresh from 'react-pull-to-refresh';
+import { motion } from 'framer-motion';
 
 export default function AdminJobsPage() {
   const [jobs, setJobs] = useState([]);
@@ -324,6 +326,72 @@ export default function AdminJobsPage() {
     return { bgColor, pillBgClass, pillTextClass, icon };
   };
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const handleRefresh = async () => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+
+        const isCustomer = user.role !== 'admin' && user.appRole !== 'dispatcher';
+        const isOutreach = user.appRole === 'outreach';
+
+        const [allJobs, allAssignments, fetchedCustomers, fetchedDeliveryTypes, fetchedTrucks] = await Promise.all([
+          base44.entities.Job.list(),
+          base44.entities.Assignment.list(),
+          base44.entities.Customer.list(),
+          base44.entities.DeliveryType.list(),
+          base44.entities.Truck.list()
+        ]);
+
+        let finalJobs = [...allJobs];
+
+        if (isCustomer && (user.customerId || user.additionalCustomerIds?.length > 0)) {
+          const allowedCustomerIds = [
+            user.customerId,
+            ...(user.additionalCustomerIds || [])
+          ].filter(Boolean);
+
+          finalJobs = finalJobs.filter(job => allowedCustomerIds.includes(job.customerId));
+        }
+
+        if (isOutreach) {
+          const manitouCodes = ['UPDWN', 'UNITUP', 'MANS'];
+          const manitouTypeIds = fetchedDeliveryTypes
+            .filter(dt => manitouCodes.includes(dt.code))
+            .map(dt => dt.id);
+          
+          finalJobs = finalJobs.filter(job => manitouTypeIds.includes(job.deliveryTypeId));
+        }
+
+        finalJobs.sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime());
+
+        setJobs(finalJobs);
+        setFilteredJobs(finalJobs);
+        setAssignments(allAssignments);
+        setCustomers(fetchedCustomers);
+        setDeliveryTypes(fetchedDeliveryTypes);
+        setTrucks(fetchedTrucks);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    await fetchData();
+    return new Promise(resolve => setTimeout(resolve, 500));
+  };
+
   const pageContent = (
     <div className="space-y-6">
         <div>
@@ -548,6 +616,38 @@ export default function AdminJobsPage() {
           </CardContent>
         </Card>
       </div>
+  );
+
+  return (
+    <>
+      {isMobile ? (
+        <PullToRefresh
+          onRefresh={handleRefresh}
+          resistance={2}
+          icon={
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="flex items-center justify-center"
+            >
+              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full" />
+            </motion.div>
+          }
+          loading={
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="flex items-center justify-center py-4"
+            >
+              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full" />
+            </motion.div>
+          }
+        >
+          {pageContent}
+        </PullToRefresh>
+      ) : (
+        pageContent
+      )}
 
       <JobDetailsDialog
         job={selectedJob}
