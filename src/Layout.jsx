@@ -37,6 +37,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ChatWidget from './components/chat/ChatWidget';
 import { OfflineProvider } from './components/offline/OfflineManager';
 import CommandPalette from './components/CommandPalette';
+import AvatarDropdown from './components/user/AvatarDropdown';
 
 const NavLink = ({ to, icon: Icon, children, collapsed, onClick }) => {
   const location = useLocation();
@@ -716,9 +717,9 @@ export default function Layout({ children, currentPageName }) {
                   </div>
           </div>
 
-          {/* Desktop header with notification bell */}
+          {/* Desktop header with user menu */}
           <div className="hidden md:flex items-center justify-end px-6 py-3 bg-white border-b">
-            {/* NotificationBell was here */}
+            <AvatarDropdown user={user} />
           </div>
 
           <main className="flex-1 overflow-y-auto p-6 md:pb-6 pb-4">
