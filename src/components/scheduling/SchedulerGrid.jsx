@@ -220,36 +220,6 @@ const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLoca
       }}
       whileHover={{ scale: isDragging ? 1 : 1.03, boxShadow: '0 6px 10px -1px rgba(0, 0, 0, 0.15)' }}
       whileTap={{ scale: 0.97 }}
-      onMouseEnter={(e) => {
-        if (!isDragging) {
-          const rgb = cardStyles['--card-color-rgb'];
-          if (rgb) {
-            e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.10)`;
-            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-          }
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isDragging) {
-          const rgb = cardStyles['--card-color-rgb'];
-          if (rgb) {
-            e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.06)`;
-            e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
-          }
-        }
-      }}
-      onMouseDown={(e) => {
-        const rgb = cardStyles['--card-color-rgb'];
-        if (rgb) {
-          e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.08)`;
-        }
-      }}
-      onMouseUp={(e) => {
-        const rgb = cardStyles['--card-color-rgb'];
-        if (rgb) {
-          e.currentTarget.style.backgroundColor = `rgba(${rgb}, 0.10)`;
-        }
-      }}
       onClick={onClick}
       aria-label={`${textStyles.name} delivery for ${job.customerName}`}
     >
@@ -308,14 +278,33 @@ const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLoca
         </div>
         <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
           {hasPodNotes && (
-            <div className="h-3 w-3 rounded-full bg-blue-500 text-white flex items-center justify-center text-[8px] font-bold">
+            <motion.div 
+              className="h-3 w-3 rounded-full bg-blue-500 text-white flex items-center justify-center text-[8px] font-bold"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2 }}
+            >
               ?
-            </div>
+            </motion.div>
           )}
           {isLargeJob && (
-            <AlertTriangle className="h-2.5 w-2.5 text-orange-500" />
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <AlertTriangle className="h-2.5 w-2.5 text-orange-500" />
+            </motion.div>
           )}
-          {job.status === 'DELIVERED' && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+          {job.status === 'DELIVERED' && (
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.25, type: "spring", stiffness: 200 }}
+            >
+              <CheckCircle2 className="h-3 w-3 text-green-600" />
+            </motion.div>
+          )}
           <GripVertical className="h-2.5 w-2.5 text-gray-500" />
         </div>
       </div>
