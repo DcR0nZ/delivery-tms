@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Package, Truck, TrendingUp, Cloud, Droplets, Clock as ClockIcon, AlertTriangle, CalendarRange } from 'lucide-react';
-import { format, startOfDay, startOfWeek, addDays } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Truck, Package, AlertTriangle, CalendarRange, Lock, Unlock, RotateCcw } from 'lucide-react';
+import { startOfDay, startOfWeek, addDays } from 'date-fns';
 import { createPageUrl } from '@/utils';
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+import ClockWidget from '../components/dashboard/ClockWidget';
+import WeatherWidget from '../components/dashboard/WeatherWidget';
+import StatWidget from '../components/dashboard/StatWidget';
+import QuickActionsWidget from '../components/dashboard/QuickActionsWidget';
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export default function DashboardPage() {
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [todayStats, setTodayStats] = useState({
     totalSqm: 0,
     totalDeliveries: 0,
@@ -23,36 +31,47 @@ export default function DashboardPage() {
   const [thisWeekStats, setThisWeekStats] = useState({
     totalSqm: 0
   });
-  const [weather, setWeather] = useState(null);
-  const [weatherError, setWeatherError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
-
-  // Update clock every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Separate function to fetch only weather
-  const fetchWeatherOnly = async () => {
-    try {
-      const response = await base44.functions.invoke('getWeather');
-      if (response.data && response.data.data) {
-        setWeather(response.data.data);
-        setWeatherError(null);
-      } else if (response.data && response.data.error) {
-        setWeatherError(response.data.error);
-      } else {
-        setWeatherError('Unexpected weather data format');
-      }
-    } catch (error) {
-      console.error('Failed to fetch weather:', error);
-      setWeatherError('Failed to load weather data');
-    }
-  };
+  const [isLocked, setIsLocked] = useState(true);
+  const [layouts, setLayouts] = useState({
+    lg: [
+      { i: 'clock', x: 0, y: 0, w: 6, h: 2, minW: 4, minH: 2 },
+      { i: 'weather', x: 6, y: 0, w: 6, h: 2, minW: 4, minH: 2 },
+      { i: 'deliveries', x: 0, y: 2, w: 4, h: 2, minW: 3, minH: 2 },
+      { i: 'sqm', x: 4, y: 2, w: 4, h: 2, minW: 3, minH: 2 },
+      { i: 'pending', x: 8, y: 2, w: 4, h: 2, minW: 3, minH: 2 },
+      { i: 'difficult', x: 0, y: 4, w: 4, h: 2, minW: 3, minH: 2 },
+      { i: 'week-delivered', x: 0, y: 6, w: 4, h: 2, minW: 3, minH: 2 },
+      { i: 'week-scheduled', x: 4, y: 6, w: 4, h: 2, minW: 3, minH: 2 },
+      { i: 'week-difficult', x: 8, y: 6, w: 4, h: 2, minW: 3, minH: 2 },
+      { i: 'actions', x: 0, y: 8, w: 12, h: 3, minW: 6, minH: 3 },
+    ],
+    md: [
+      { i: 'clock', x: 0, y: 0, w: 5, h: 2, minW: 4, minH: 2 },
+      { i: 'weather', x: 5, y: 0, w: 5, h: 2, minW: 4, minH: 2 },
+      { i: 'deliveries', x: 0, y: 2, w: 5, h: 2, minW: 3, minH: 2 },
+      { i: 'sqm', x: 5, y: 2, w: 5, h: 2, minW: 3, minH: 2 },
+      { i: 'pending', x: 0, y: 4, w: 5, h: 2, minW: 3, minH: 2 },
+      { i: 'difficult', x: 5, y: 4, w: 5, h: 2, minW: 3, minH: 2 },
+      { i: 'week-delivered', x: 0, y: 6, w: 3, h: 2, minW: 3, minH: 2 },
+      { i: 'week-scheduled', x: 3, y: 6, w: 3, h: 2, minW: 3, minH: 2 },
+      { i: 'week-difficult', x: 6, y: 6, w: 4, h: 2, minW: 3, minH: 2 },
+      { i: 'actions', x: 0, y: 8, w: 10, h: 3, minW: 6, minH: 3 },
+    ],
+    sm: [
+      { i: 'clock', x: 0, y: 0, w: 6, h: 2 },
+      { i: 'weather', x: 0, y: 2, w: 6, h: 2 },
+      { i: 'deliveries', x: 0, y: 4, w: 6, h: 2 },
+      { i: 'sqm', x: 0, y: 6, w: 6, h: 2 },
+      { i: 'pending', x: 0, y: 8, w: 6, h: 2 },
+      { i: 'difficult', x: 0, y: 10, w: 6, h: 2 },
+      { i: 'week-delivered', x: 0, y: 12, w: 6, h: 2 },
+      { i: 'week-scheduled', x: 0, y: 14, w: 6, h: 2 },
+      { i: 'week-difficult', x: 0, y: 16, w: 6, h: 2 },
+      { i: 'actions', x: 0, y: 18, w: 6, h: 3 },
+    ],
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -150,11 +169,6 @@ export default function DashboardPage() {
           totalSqm: thisWeekJobs.reduce((sum, job) => sum + (job.sqm || 0), 0)
         });
 
-        // Fetch weather only if page is visible initially
-        if (!document.hidden) {
-          await fetchWeatherOnly();
-        }
-
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -164,33 +178,29 @@ export default function DashboardPage() {
 
     fetchData();
 
-    // Listen for page visibility changes
-    const handleVisibilityChange = () => {
-      // Only fetch weather when page becomes visible and if weather hasn't been fetched yet
-      if (!document.hidden && !weather) {
-        fetchWeatherOnly();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    const savedLayouts = localStorage.getItem('dashboardLayouts');
+    if (savedLayouts) {
+      setLayouts(JSON.parse(savedLayouts));
+    }
   }, []);
 
   const getGreeting = () => {
-    const hour = currentTime.getHours();
+    const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
   };
 
-  const getWeatherIcon = (condition) => {
-    if (condition?.toLowerCase().includes('rain')) {
-      return <Droplets className="h-16 w-16 text-white opacity-50" />;
+  const handleLayoutChange = (layout, allLayouts) => {
+    if (!isLocked) {
+      setLayouts(allLayouts);
+      localStorage.setItem('dashboardLayouts', JSON.stringify(allLayouts));
     }
-    return <Cloud className="h-16 w-16 text-white opacity-50" />;
+  };
+
+  const handleResetLayout = () => {
+    localStorage.removeItem('dashboardLayouts');
+    window.location.reload();
   };
 
   if (loading) {
@@ -205,236 +215,127 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          {getGreeting()}, {currentUser?.full_name?.split(' ')[0] || 'there'}
-        </h1>
-        <p className="text-gray-600 mt-1">Here's what's happening today</p>
-      </div>
-
-      {/* Clock and Weather Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Clock Card */}
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="text-white">
-                <p className="text-sm font-medium opacity-90">Current Time</p>
-                <p className="text-5xl font-bold mt-2">
-                  {format(currentTime, 'h:mm')}
-                  <span className="text-2xl ml-2">{format(currentTime, 'a')}</span>
-                </p>
-                <p className="text-lg mt-2 opacity-90">
-                  {format(currentTime, 'EEEE, MMMM d, yyyy')}
-                </p>
-              </div>
-              <ClockIcon className="h-16 w-16 text-white opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Weather Card */}
-        <Card className="bg-gradient-to-br from-indigo-500 to-indigo-700">
-          <CardContent className="p-6">
-            <div className="text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium opacity-90">Brisbane Weather</p>
-                  {weather ? (
-                    <>
-                      <div className="flex items-baseline mt-2">
-                        <p className="text-5xl font-bold">{Math.round(weather.temp)}°</p>
-                        <span className="text-2xl ml-2">C</span>
-                      </div>
-                      <p className="text-lg mt-2 capitalize opacity-90">{weather.description}</p>
-                      <div className="flex items-center gap-4 mt-3">
-                        <div className="flex items-center gap-2">
-                          <Droplets className="h-4 w-4" />
-                          <span className="text-sm">{weather.rain_chance}% Rain</span>
-                        </div>
-                        <div className="text-sm">
-                          Humidity: {weather.humidity}%
-                        </div>
-                      </div>
-                    </>
-                  ) : weatherError ? (
-                    <p className="text-lg mt-2">{weatherError}</p>
-                  ) : (
-                    <p className="text-lg mt-2">Loading weather...</p>
-                  )}
-                </div>
-                <div>
-                  {weather && getWeatherIcon(weather.description)}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Today's Overview Section */}
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Today's Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Total Deliveries/Jobs Today */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = createPageUrl('DailyJobBoard')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                {isOutreach ? 'Jobs Today' : 'Deliveries Today'}
-              </CardTitle>
-              <Truck className="h-5 w-5 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{todayStats.totalDeliveries}</div>
-              <p className="text-xs text-gray-500 mt-1">{isOutreach ? 'Scheduled for today' : 'Scheduled for delivery'}</p>
-            </CardContent>
-          </Card>
-
-          {/* Total SQM/Hours Today */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = createPageUrl('DailyJobBoard')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                {isOutreach ? 'Total Hours Booked Today' : 'Total m² Today'}
-              </CardTitle>
-              <Package className="h-5 w-5 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">
-                {isOutreach ? `${todayStats.totalSqm.toLocaleString()}h` : todayStats.totalSqm.toLocaleString()}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {isOutreach ? 'Across all machines' : 'Square meters scheduled'}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Pending Approval */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = createPageUrl('SchedulingBoard')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Awaiting Schedule
-              </CardTitle>
-              <Package className="h-5 w-5 text-amber-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{todayStats.approvedJobs}</div>
-              <p className="text-xs text-gray-500 mt-1">Jobs ready to schedule</p>
-            </CardContent>
-          </Card>
-
-          {/* Difficult Deliveries */}
-          {todayStats.difficultDeliveries > 0 && (
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer border-orange-200" onClick={() => window.location.href = createPageUrl('DailyJobBoard')}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-orange-700">
-                  Difficult Deliveries
-                </CardTitle>
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-orange-900">{todayStats.difficultDeliveries}</div>
-                <p className="text-xs text-orange-600 mt-1">Requires special attention</p>
-              </CardContent>
-            </Card>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {getGreeting()}, {currentUser?.full_name?.split(' ')[0] || 'there'}
+          </h1>
+          <p className="text-gray-600 mt-1">Here's what's happening today</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsLocked(!isLocked)}
+            className="gap-2"
+          >
+            {isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+            {isLocked ? 'Unlock Layout' : 'Lock Layout'}
+          </Button>
+          {!isLocked && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetLayout}
+              className="gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset
+            </Button>
           )}
         </div>
       </div>
 
-      {/* The Week Section */}
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <CalendarRange className="h-5 w-5 text-purple-600" />
-          This Week
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-purple-200 bg-purple-50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-700">
-                Delivered
-              </CardTitle>
-              <Calendar className="h-5 w-5 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">
-                {isOutreach ? `${thisWeekStats.totalSqm.toLocaleString()}h` : thisWeekStats.totalSqm.toLocaleString()}
-              </div>
-              <p className="text-xs text-gray-600 mt-1">
-                {isOutreach ? 'Total hours scheduled and/or completed since Monday morning' : 'Total m² delivered this week'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-purple-200 bg-purple-50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-700">
-                {isOutreach ? 'Total Hours' : 'Scheduled'}
-              </CardTitle>
-              <Package className="h-5 w-5 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">
-                {isOutreach ? `${weekAheadStats.totalSqm.toLocaleString()}h` : weekAheadStats.totalSqm.toLocaleString()}
-              </div>
-              <p className="text-xs text-gray-600 mt-1">
-                {isOutreach ? 'Booked machine hours' : 'Total m² still to deliver'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-purple-200 bg-purple-50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-700">
-                Difficult Deliveries
-              </CardTitle>
-              <AlertTriangle className="h-5 w-5 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{weekAheadStats.difficultDeliveries}</div>
-              <p className="text-xs text-gray-600 mt-1">Special attention required</p>
-            </CardContent>
-          </Card>
+      <ResponsiveGridLayout
+        className="layout"
+        layouts={layouts}
+        onLayoutChange={handleLayoutChange}
+        breakpoints={{ lg: 1200, md: 996, sm: 768 }}
+        cols={{ lg: 12, md: 10, sm: 6 }}
+        rowHeight={60}
+        isDraggable={!isLocked}
+        isResizable={!isLocked}
+        margin={[16, 16]}
+      >
+        <div key="clock">
+          <ClockWidget />
         </div>
-      </div>
-
-
-
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={() => window.location.href = createPageUrl(currentUser?.appRole === 'driver' ? 'DriverMyRuns' : 'SchedulingBoard')}
-            className="p-6 bg-blue-50 hover:bg-blue-100 rounded-lg text-left transition-colors"
-          >
-            <Calendar className="h-6 w-6 text-blue-600 mb-3" />
-            <p className="font-semibold text-gray-900 mb-1">
-              {currentUser?.appRole === 'driver' ? 'My Runs' : 'Open Scheduler'}
-            </p>
-            <p className="text-sm text-gray-600">
-              {currentUser?.appRole === 'driver' ? 'View your delivery schedule' : 'Manage delivery schedule'}
-            </p>
-          </button>
-
-          <button
+        <div key="weather">
+          <WeatherWidget />
+        </div>
+        <div key="deliveries">
+          <StatWidget
+            title={isOutreach ? 'Jobs Today' : 'Deliveries Today'}
+            value={todayStats.totalDeliveries}
+            subtitle={isOutreach ? 'Scheduled for today' : 'Scheduled for delivery'}
+            icon={Truck}
+            color="blue"
             onClick={() => window.location.href = createPageUrl('DailyJobBoard')}
-            className="p-6 bg-green-50 hover:bg-green-100 rounded-lg text-left transition-colors"
-          >
-            <Truck className="h-6 w-6 text-green-600 mb-3" />
-            <p className="font-semibold text-gray-900 mb-1">Daily Job Board</p>
-            <p className="text-sm text-gray-600">View today's deliveries</p>
-          </button>
-
-          <button
-            onClick={() => window.location.href = createPageUrl('AdminJobs')}
-            className="p-6 bg-purple-50 hover:bg-purple-100 rounded-lg text-left transition-colors"
-          >
-            <Package className="h-6 w-6 text-purple-600 mb-3" />
-            <p className="font-semibold text-gray-900 mb-1">All Jobs</p>
-            <p className="text-sm text-gray-600">Browse complete job list</p>
-          </button>
+          />
         </div>
-      </div>
+        <div key="sqm">
+          <StatWidget
+            title={isOutreach ? 'Total Hours Booked Today' : 'Total m² Today'}
+            value={isOutreach ? `${todayStats.totalSqm.toLocaleString()}h` : todayStats.totalSqm.toLocaleString()}
+            subtitle={isOutreach ? 'Across all machines' : 'Square meters scheduled'}
+            icon={Package}
+            color="green"
+            onClick={() => window.location.href = createPageUrl('DailyJobBoard')}
+          />
+        </div>
+        <div key="pending">
+          <StatWidget
+            title="Awaiting Schedule"
+            value={todayStats.approvedJobs}
+            subtitle="Jobs ready to schedule"
+            icon={Package}
+            color="amber"
+            onClick={() => window.location.href = createPageUrl('SchedulingBoard')}
+          />
+        </div>
+        {todayStats.difficultDeliveries > 0 && (
+          <div key="difficult">
+            <StatWidget
+              title="Difficult Deliveries"
+              value={todayStats.difficultDeliveries}
+              subtitle="Requires special attention"
+              icon={AlertTriangle}
+              color="orange"
+              onClick={() => window.location.href = createPageUrl('DailyJobBoard')}
+            />
+          </div>
+        )}
+        <div key="week-delivered">
+          <StatWidget
+            title="Delivered This Week"
+            value={isOutreach ? `${thisWeekStats.totalSqm.toLocaleString()}h` : thisWeekStats.totalSqm.toLocaleString()}
+            subtitle={isOutreach ? 'Hours completed since Monday' : 'Total m² delivered'}
+            icon={CalendarRange}
+            color="purple"
+          />
+        </div>
+        <div key="week-scheduled">
+          <StatWidget
+            title={isOutreach ? 'Total Hours' : 'Scheduled This Week'}
+            value={isOutreach ? `${weekAheadStats.totalSqm.toLocaleString()}h` : weekAheadStats.totalSqm.toLocaleString()}
+            subtitle={isOutreach ? 'Booked machine hours' : 'Total m² still to deliver'}
+            icon={Package}
+            color="purple"
+          />
+        </div>
+        <div key="week-difficult">
+          <StatWidget
+            title="Difficult Deliveries"
+            value={weekAheadStats.difficultDeliveries}
+            subtitle="Special attention required"
+            icon={AlertTriangle}
+            color="purple"
+          />
+        </div>
+        <div key="actions">
+          <QuickActionsWidget currentUser={currentUser} />
+        </div>
+      </ResponsiveGridLayout>
     </div>
   );
 }
