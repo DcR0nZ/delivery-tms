@@ -209,17 +209,14 @@ export default function SchedulingBoard() {
       }
 
       const parts = destination.droppableId.split('-');
-      const requestedSlotPosition = parseInt(parts[parts.length - 1]);
-      const timeSlotId = parts.slice(1, parts.length - 1).join('-');
       const truckId = parts[0];
-
-      const finalSlotPosition = requestedSlotPosition <= 2 ? 1 : 3;
+      const timeSlotId = parts.slice(1).join('-');
 
       // Update placeholder position
       await base44.entities.Placeholder.update(placeholderId, {
         truckId,
         timeSlotId,
-        slotPosition: finalSlotPosition,
+        slotPosition: destination.index + 1,
         date: selectedDate
       });
       fetchData();
@@ -278,7 +275,8 @@ export default function SchedulingBoard() {
       await base44.entities.Assignment.update(sourceAssignment.id, { 
         truckId, 
         timeSlotId, 
-        slotPosition: finalSlotPosition 
+        slotPosition: finalSlotPosition,
+        date: selectedDate
       });
     } else {
       await base44.entities.Assignment.create({
