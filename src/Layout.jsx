@@ -32,6 +32,7 @@ import {
   BarChart3,
   Map as MapIcon
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import ChatWidget from './components/chat/ChatWidget';
 import { OfflineProvider } from './components/offline/OfflineManager';
@@ -52,6 +53,48 @@ const NavLink = ({ to, icon: Icon, children, collapsed, onClick }) => {
     >
       <Icon className={`h-5 w-5 ${collapsed ? '' : 'mr-3'}`} />
       {!collapsed && children}
+    </Link>
+  );
+};
+
+const MobileBottomNavItem = ({ to, icon: Icon, label }) => {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+  
+  return (
+    <Link to={to} className="flex-1 flex flex-col items-center justify-center relative">
+      <motion.div
+        whileTap={{ scale: 0.85 }}
+        className="flex flex-col items-center justify-center w-full py-2"
+      >
+        <motion.div
+          animate={{
+            y: isActive ? -2 : 0,
+            scale: isActive ? 1.1 : 1
+          }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="relative"
+        >
+          <Icon 
+            className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`}
+            strokeWidth={isActive ? 2.5 : 2}
+          />
+          {isActive && (
+            <motion.div
+              layoutId="bottomNavIndicator"
+              className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full"
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          )}
+        </motion.div>
+        <motion.span 
+          className={`text-[10px] font-medium mt-1 ${isActive ? 'text-blue-600' : 'text-gray-500'}`}
+          animate={{ scale: isActive ? 1.05 : 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          {label}
+        </motion.span>
+      </motion.div>
     </Link>
   );
 };
@@ -465,6 +508,52 @@ export default function Layout({ children, currentPageName }) {
     return 'Dispatch';
   };
 
+  const getMobileBottomNavItems = () => {
+    if (user.role === 'admin') {
+      return [
+        { to: createPageUrl('Dashboard'), icon: Home, label: 'Home' },
+        { to: createPageUrl('SchedulingBoard'), icon: LayoutGrid, label: 'Schedule' },
+        { to: createPageUrl('DailyJobBoard'), icon: Calendar, label: 'Jobs' },
+        { to: createPageUrl('Map'), icon: MapIcon, label: 'Map' },
+      ];
+    }
+    
+    if (user.appRole === 'dispatcher') {
+      return [
+        { to: createPageUrl('Dashboard'), icon: Home, label: 'Home' },
+        { to: createPageUrl('SchedulingBoard'), icon: LayoutGrid, label: 'Schedule' },
+        { to: createPageUrl('DailyJobBoard'), icon: Calendar, label: 'Jobs' },
+        { to: createPageUrl('Map'), icon: MapIcon, label: 'Map' },
+      ];
+    }
+    
+    if (user.appRole === 'driver') {
+      return [
+        { to: createPageUrl('Dashboard'), icon: Home, label: 'Home' },
+        { to: createPageUrl('DriverMyRuns'), icon: Truck, label: 'My Runs' },
+        { to: createPageUrl('DailyJobBoard'), icon: Calendar, label: 'Board' },
+        { to: createPageUrl('WeatherToday'), icon: CloudRain, label: 'Weather' },
+      ];
+    }
+    
+    if (user.appRole === 'manager') {
+      return [
+        { to: createPageUrl('Dashboard'), icon: Home, label: 'Home' },
+        { to: createPageUrl('DailyJobBoard'), icon: Calendar, label: 'Jobs' },
+        { to: createPageUrl('Map'), icon: MapIcon, label: 'Map' },
+        { to: createPageUrl('Reports'), icon: BarChart3, label: 'Reports' },
+      ];
+    }
+    
+    // Customer or default
+    return [
+      { to: createPageUrl('AdminJobs'), icon: Briefcase, label: 'Jobs' },
+      { to: createPageUrl('DailyJobBoard'), icon: Calendar, label: 'Schedule' },
+      { to: createPageUrl('CustomerRequestDelivery'), icon: Plus, label: 'Request' },
+      { to: createPageUrl('WeatherToday'), icon: CloudRain, label: 'Weather' },
+    ];
+  };
+
   const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
   const mainMargin = sidebarCollapsed ? 'md:ml-16' : 'md:ml-64';
 
@@ -568,7 +657,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         {/* Main Content Wrapper - applies margin for desktop, contains mobile header & main */}
-        <div className={`flex-1 flex flex-col ${mainMargin} h-full transition-all duration-300`}>
+        <div className={`flex-1 flex flex-col ${mainMargin} h-full transition-all duration-300 md:pb-0 pb-16`}>
           {/* Mobile Header */}
           <div className="md:hidden bg-white border-b px-4 py-3 flex items-center justify-between z-30">
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -628,14 +717,49 @@ export default function Layout({ children, currentPageName }) {
             {/* NotificationBell was here */}
           </div>
 
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto p-6 md:pb-6 pb-4">
             {children}
           </main>
-        </div>
-      </div>
 
-      <ChatWidget />
-      <Toaster />
-    </OfflineProvider>
-  );
-}
+          {/* Mobile Bottom Navigation */}
+          <AnimatePresence>
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30, delay: 0.1 }}
+              className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50"
+            >
+              <motion.div 
+                className="flex items-center justify-around h-16 px-2 safe-area-bottom"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                {getMobileBottomNavItems().map((item, index) => (
+                  <motion.div
+                    key={item.to}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                      delay: 0.1 + (index * 0.05),
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 25
+                    }}
+                    className="flex-1"
+                  >
+                    <MobileBottomNavItem {...item} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>
+          </div>
+          </div>
+
+          <ChatWidget />
+          <Toaster />
+          </OfflineProvider>
+          );
+          }
