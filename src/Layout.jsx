@@ -36,6 +36,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import ChatWidget from './components/chat/ChatWidget';
 import { OfflineProvider } from './components/offline/OfflineManager';
+import CommandPalette from './components/CommandPalette';
 
 const NavLink = ({ to, icon: Icon, children, collapsed, onClick }) => {
   const location = useLocation();
@@ -706,10 +707,13 @@ export default function Layout({ children, currentPageName }) {
               </SheetContent>
             </Sheet>
 
-            <div className="flex items-center gap-2">
-              <Truck className="h-6 w-6 text-blue-600" />
-              <span className="font-semibold text-lg">{getSidebarTitle()}</span>
-            </div>
+            <div className="flex items-center gap-2 flex-1">
+                    <Truck className="h-6 w-6 text-blue-600" />
+                    <span className="font-semibold text-lg">{getSidebarTitle()}</span>
+                  </div>
+                  <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded border border-gray-300">
+                    ⌘K
+                  </div>
           </div>
 
           {/* Desktop header with notification bell */}
@@ -758,6 +762,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
           </div>
 
+          <CommandPalette user={user} />
           <ChatWidget />
           <Toaster />
           </OfflineProvider>
