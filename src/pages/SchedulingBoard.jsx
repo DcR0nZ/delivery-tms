@@ -249,43 +249,30 @@ export default function SchedulingBoard() {
     
     const assignmentsExcludingCurrentJob = assignments.filter(a => a.jobId !== jobId);
     
-    let finalSlotPosition;
-
-    const isTargetingBlock1 = requestedSlotPosition <= 2;
-    
-    const primaryBlockStart = isTargetingBlock1 ? 1 : 3;
-    const primaryBlockEnd = isTargetingBlock1 ? 2 : 4;
-
-    const secondaryBlockStart = isTargetingBlock1 ? 3 : 1;
-    const secondaryBlockEnd = isTargetingBlock1 ? 4 : 2;
-
-    const primaryBlockOccupied = assignmentsExcludingCurrentJob.some(a => 
-      a.truckId === truckId && 
-      a.timeSlotId === timeSlotId && 
-      a.slotPosition >= primaryBlockStart &&
-      a.slotPosition <= primaryBlockEnd
+    // Find which slot positions are already occupied in this time slot
+    const occupiedPositions = new Set(
+      assignmentsExcludingCurrentJob
+        .filter(a => a.truckId === truckId && a.timeSlotId === timeSlotId)
+        .map(a => a.slotPosition)
     );
-
-    if (!primaryBlockOccupied) {
-      finalSlotPosition = primaryBlockStart;
-    } else {
-      const secondaryBlockOccupied = assignmentsExcludingCurrentJob.some(a => 
-        a.truckId === truckId && 
-        a.timeSlotId === timeSlotId && 
-        a.slotPosition >= secondaryBlockStart &&
-        a.slotPosition <= secondaryBlockEnd
-      );
-
-      if (!secondaryBlockOccupied) {
-        finalSlotPosition = secondaryBlockStart;
-      } else {
-        toast({
-          title: "Time Window Full",
-          description: "Both delivery blocks in this time window are occupied. Please choose a different time or truck.",
-          variant: "destructive",
-        });
-        return;
+    
+    // Find the first available position (1, 2, 3, or 4)
+    let finalSlotPosition = null;
+    for (let pos = 1; pos <= 4; pos++) {
+      if (!occupiedPositions.has(pos)) {
+        finalSlotPosition = pos;
+        break;
       }
+    }
+    
+    // If all 4 positions are occupied, show error
+    if (finalSlotPosition === null) {
+      toast({
+        title: "Time Window Full",
+        description: "This time slot already has 4 jobs scheduled. Please choose a different time or truck.",
+        variant: "destructive",
+      });
+      return;
     }
     
     if (sourceAssignment) {
