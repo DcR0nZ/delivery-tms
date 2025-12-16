@@ -243,9 +243,8 @@ export default function SchedulingBoard() {
     }
     
     const parts = destination.droppableId.split('-');
-    const requestedSlotPosition = parseInt(parts[parts.length - 1]);
-    const timeSlotId = parts.slice(1, parts.length - 1).join('-');
     const truckId = parts[0];
+    const timeSlotId = parts.slice(1).join('-');
     
     const assignmentsExcludingCurrentJob = assignments.filter(a => a.jobId !== jobId);
     
