@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Package, GripVertical, CheckCircle2, Plus } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -204,14 +205,21 @@ const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLoca
   const pickupShortname = pickupLocation?.shortname;
 
   const jobCard = (
-    <div
-      className={`w-full h-full border-2 rounded p-2 text-xs cursor-pointer transition-all overflow-hidden ${
-        isDragging ? 'opacity-50 scale-105 z-50' : ''
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 30 }}
+      className={`w-full h-full border-2 rounded p-2 text-xs cursor-pointer overflow-hidden ${
+        isDragging ? 'opacity-50 z-50' : ''
       }`}
       style={{
         ...cardStyles,
         boxShadow: isDragging ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
       }}
+      whileHover={{ scale: isDragging ? 1 : 1.03, boxShadow: '0 6px 10px -1px rgba(0, 0, 0, 0.15)' }}
+      whileTap={{ scale: 0.97 }}
       onMouseEnter={(e) => {
         if (!isDragging) {
           const rgb = cardStyles['--card-color-rgb'];
@@ -311,7 +319,7 @@ const ScheduledJobBlock = ({ job, isDragging, onClick, deliveryTypes, pickupLoca
           <GripVertical className="h-2.5 w-2.5 text-gray-500" />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   if (job.isDifficultDelivery && job.deliveryDifficulty) {
@@ -496,9 +504,10 @@ export default function SchedulerGrid({
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className={`flex-1 flex gap-2 p-3 overflow-x-auto min-h-[100px] ${
-                  snapshot.isDraggingOver ? 'bg-yellow-200' : ''
+                className={`flex-1 flex gap-2 p-3 overflow-x-auto min-h-[100px] transition-colors duration-200 ${
+                 snapshot.isDraggingOver ? 'bg-yellow-200' : ''
                 }`}>
+                <AnimatePresence>
                 {unscheduledJobs.map((job, index) => (
                   <Draggable key={job.id} draggableId={job.id} index={index} isDragDisabled={!dragDropEnabled}>
                     {(provided, snapshot) => (
@@ -523,6 +532,7 @@ export default function SchedulerGrid({
                     )}
                   </Draggable>
                 ))}
+                </AnimatePresence>
                 {provided.placeholder}
                 {unscheduledJobs.length === 0 && (
                   <div className="text-gray-500 text-sm p-2 flex items-center">No unscheduled jobs for this date</div>
@@ -630,8 +640,8 @@ export default function SchedulerGrid({
                                   <div
                                     ref={provided.innerRef}
                                     {...provided.droppableProps}
-                                    className={`relative border-r border-gray-200 group overflow-visible flex-1 ${
-                                      snapshot.isDraggingOver ? 'ring-2 ring-inset ring-blue-500 bg-blue-100' : ''
+                                    className={`relative border-r border-gray-200 group overflow-visible flex-1 transition-all duration-200 ${
+                                     snapshot.isDraggingOver ? 'ring-2 ring-inset ring-blue-500 bg-blue-100 scale-[1.02]' : ''
                                     }`}
                                     style={{
                                       minWidth: '100px',
@@ -645,6 +655,7 @@ export default function SchedulerGrid({
                                     {/* Centered Content Container with relative positioning for buttons */}
                                     <div
                                       className="flex flex-col gap-2 items-center justify-center w-full px-1 relative">
+                                      <AnimatePresence>
                                       {slotJobs.map((job, index) => (
                                         <div key={job.id} className="relative w-full max-w-[196px] group/job">
                                           {/* Left Placeholder Button - Insert Above */}
@@ -694,10 +705,12 @@ export default function SchedulerGrid({
                                               <Plus className="h-3 w-3 text-gray-600" />
                                             </button>
                                           )}
-                                        </div>
-                                      ))}
+                                          </div>
+                                          ))}
+                                          </AnimatePresence>
 
-                                      {slotPlaceholders.map((placeholder, phIndex) => (
+                                          <AnimatePresence>
+                                          {slotPlaceholders.map((placeholder, phIndex) => (
                                         <div key={`placeholder-${placeholder.id}`} className="relative w-full max-w-[196px] group/placeholder">
                                           {/* Left Placeholder Button - Insert Above */}
                                           {canCreatePlaceholder && !isDraggingOver && (
@@ -741,18 +754,23 @@ export default function SchedulerGrid({
                                               <Plus className="h-3 w-3 text-gray-600" />
                                             </button>
                                           )}
-                                        </div>
-                                      ))}
-                                    </div>
+                                          </div>
+                                          ))}
+                                          </AnimatePresence>
+                                          </div>
 
                                     {/* Empty Cell Placeholder Button */}
                                     {canCreatePlaceholder && slotJobs.length === 0 && slotPlaceholders.length === 0 && !isDraggingOver && (
-                                      <button
+                                      <motion.button
                                         onClick={() => onOpenPlaceholderDialog(truck.id, slot.id, blockStart)}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-2 z-10"
-                                        style={{ width: '48px', height: '48px' }}>
+                                        className="opacity-0 group-hover:opacity-100 bg-white hover:bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-2 z-10"
+                                        style={{ width: '48px', height: '48px' }}
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        transition={{ duration: 0.15 }}
+                                      >
                                         <Plus className="h-6 w-6 text-gray-400" />
-                                      </button>
+                                      </motion.button>
                                     )}
 
                                     {provided.placeholder}
