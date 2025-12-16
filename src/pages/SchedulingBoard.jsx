@@ -27,6 +27,9 @@ import RouteOptimizer from '../components/scheduling/RouteOptimizer';
 import { TrendingUp } from 'lucide-react';
 import PullToRefresh from 'react-pull-to-refresh';
 import { motion } from 'framer-motion';
+import PhysicsJobList from '../components/scheduling/PhysicsJobList';
+import GestureJobCard from '../components/scheduling/GestureJobCard';
+import PullToRefreshIndicator from '../components/scheduling/PullToRefreshIndicator';
 
 export default function SchedulingBoard() {
   const [jobs, setJobs] = useState([]);
@@ -576,7 +579,7 @@ export default function SchedulingBoard() {
           ) : (
             <div className="px-4 py-4 pb-24">
               {allUnscheduledJobs.length > 0 && (
-                  <Card className="bg-yellow-50 border-yellow-200">
+                  <Card className="bg-yellow-50 border-yellow-200 mb-4">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center justify-between">
                         <span className="flex items-center gap-2">
@@ -588,66 +591,18 @@ export default function SchedulingBoard() {
                         </Badge>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2">
-                      {allUnscheduledJobs.map(job => {
-                        const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
-                        const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
-                        const pickupShortname = pickupLocation?.shortname;
-                        const cardStyles = getJobCardInlineStyles(deliveryType, job);
-                        const badgeStyles = getBadgeStyles(getJobCardStyles(deliveryType, job));
-                        const textStyles = getJobCardStyles(deliveryType, job);
-                        
-                        return (
-                          <div
-                            key={job.id}
-                            onClick={() => {
-                              setSelectedJob(job);
-                              setJobDialogOpen(true);
-                            }}
-                            className="p-3 rounded-lg border-2 active:bg-gray-50 transition-colors"
-                            style={{
-                              ...cardStyles,
-                              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                            }}
-                          >
-                            <div className="flex justify-between items-start gap-2 mb-1">
-                              <div className="flex-1 min-w-0">
-                                {(deliveryType?.code || pickupShortname) && (
-                                  <div className="mb-1 flex gap-1 flex-wrap">
-                                    {deliveryType?.code && (
-                                      <span 
-                                        className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm"
-                                        style={badgeStyles}
-                                      >
-                                        {textStyles.icon && <span className="text-sm">{textStyles.icon}</span>}
-                                        {deliveryType.code}
-                                      </span>
-                                    )}
-                                    {pickupShortname && (
-                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
-                                        {pickupShortname}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                                <span className="font-semibold text-sm text-gray-900 block">{job.customerName}</span>
-                              </div>
-                              <div className="flex flex-col gap-1 items-end">
-                                {job.sqm && (
-                                  <Badge variant="secondary" className="text-[10px] bg-white/90 text-gray-900">
-                                    {job.sqm}m²
-                                  </Badge>
-                                )}
-                                {job.isDifficultDelivery && (
-                                  <AlertTriangle className="h-4 w-4 text-orange-500" />
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-sm text-gray-600">{job.deliveryLocation}</p>
-                            <p className="text-xs text-gray-500 mt-1">{job.deliveryTypeName}</p>
-                          </div>
-                        );
-                      })}
+                    <CardContent>
+                      <PhysicsJobList
+                        jobs={allUnscheduledJobs}
+                        deliveryTypes={deliveryTypes}
+                        pickupLocations={pickupLocations}
+                        onJobClick={(job) => {
+                          setSelectedJob(job);
+                          setJobDialogOpen(true);
+                        }}
+                        showDeleteAction={false}
+                        emptyMessage="No unscheduled jobs"
+                      />
                     </CardContent>
                   </Card>
                 )}
@@ -702,60 +657,19 @@ export default function SchedulingBoard() {
                                   {slotJobs.map(({ job }) => {
                                     const deliveryType = deliveryTypes.find(dt => dt.id === job.deliveryTypeId);
                                     const pickupLocation = pickupLocations.find(loc => loc.id === job.pickupLocationId);
-                                    const pickupShortname = pickupLocation?.shortname;
-                                    const cardStyles = getJobCardInlineStyles(deliveryType, job);
-                                    const badgeStyles = getBadgeStyles(getJobCardStyles(deliveryType, job));
-                                    const textStyles = getJobCardStyles(deliveryType, job);
                                     
                                     return (
-                                      <div
+                                      <GestureJobCard
                                         key={job.id}
-                                        onClick={() => {
+                                        job={job}
+                                        deliveryType={deliveryType}
+                                        pickupLocation={pickupLocation}
+                                        onClick={(job) => {
                                           setSelectedJob(job);
                                           setJobDialogOpen(true);
                                         }}
-                                        className="p-3 rounded-lg border-2 active:bg-gray-100 transition-colors"
-                                        style={{
-                                          ...cardStyles,
-                                          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                                        }}
-                                      >
-                                        <div className="flex justify-between items-start gap-2 mb-1">
-                                          <div className="flex-1 min-w-0">
-                                            {(deliveryType?.code || pickupShortname) && (
-                                              <div className="mb-1 flex gap-1 flex-wrap">
-                                                {deliveryType?.code && (
-                                                  <span 
-                                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm"
-                                                    style={badgeStyles}
-                                                  >
-                                                    {textStyles.icon && <span className="text-sm">{textStyles.icon}</span>}
-                                                    {deliveryType.code}
-                                                  </span>
-                                                )}
-                                                {pickupShortname && (
-                                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
-                                                    {pickupShortname}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            )}
-                                            <span className="font-semibold text-sm text-gray-900 block">{job.customerName}</span>
-                                          </div>
-                                          <div className="flex flex-col gap-1 items-end">
-                                            {job.sqm && (
-                                              <Badge variant="outline" className="text-xs bg-white/90 text-gray-900">
-                                                {job.sqm}m²
-                                              </Badge>
-                                            )}
-                                            {job.isDifficultDelivery && (
-                                              <AlertTriangle className="h-4 w-4 text-orange-500" />
-                                            )}
-                                          </div>
-                                        </div>
-                                        <p className="text-sm text-gray-600">{job.deliveryLocation}</p>
-                                        <p className="text-xs text-gray-500 mt-1">{job.deliveryTypeName}</p>
-                                      </div>
+                                        showDeleteAction={false}
+                                      />
                                     );
                                   })}
                                 </div>
