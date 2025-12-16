@@ -74,7 +74,8 @@
     "three": "^0.171.0",
     "vaul": "^1.1.2",
     "zod": "^3.24.2",
-    "react-pull-to-refresh": "^2.0.1"
+    "react-pull-to-refresh": "^2.0.1",
+    "react-grid-layout": "^1.4.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
