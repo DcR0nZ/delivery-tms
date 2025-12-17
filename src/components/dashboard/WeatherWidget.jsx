@@ -112,6 +112,10 @@ export default function WeatherWidget() {
                     <div className="my-1">{getWeatherIcon(hour.code, "small")}</div>
                     <span className="text-sm font-bold">{Math.round(hour.temp)}°</span>
                     <div className="flex flex-col items-center mt-1 space-y-0.5">
+                       <div className="flex items-center gap-0.5 text-[9px] opacity-70 mb-0.5">
+                          <Wind className="h-2 w-2" />
+                          <span>{Math.round(hour.wind_speed)}</span>
+                       </div>
                        {hour.rain_prob > 0 && (
                         <div className="flex items-center gap-0.5 text-[9px] text-blue-200">
                            <Umbrella className="h-2 w-2" />
