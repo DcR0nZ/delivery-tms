@@ -14,8 +14,8 @@ import { getJobCardInlineStyles, getBadgeStyles, getJobCardStyles } from '../com
 import DeliveryTypeLegend from '../components/scheduling/DeliveryTypeLegend';
 import GlobalSearchBar from '../components/search/GlobalSearchBar';
 import AdvancedFilters from '../components/search/AdvancedFilters';
-import PullToRefresh from 'react-pull-to-refresh';
 import { motion } from 'framer-motion';
+import PullToRefreshIndicator from '../components/scheduling/PullToRefreshIndicator';
 
 const COLOR_OPTIONS = {
   gray: { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-300' },
@@ -340,29 +340,7 @@ export default function DailyJobBoard() {
   // MOBILE VIEW
   if (isMobile) {
     return (
-      <PullToRefresh
-        onRefresh={handleRefresh}
-        resistance={2}
-        icon={
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="flex items-center justify-center"
-          >
-            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full" />
-          </motion.div>
-        }
-        loading={
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="flex items-center justify-center py-4"
-          >
-            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full" />
-          </motion.div>
-        }
-        className="min-h-screen bg-gray-50"
-      >
+      <PullToRefreshIndicator onRefresh={handleRefresh}>
       <div className="min-h-screen bg-gray-50 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="bg-white border-b px-4 py-4 sticky top-0 z-10 shadow-sm">
           <div className="space-y-3">
@@ -632,7 +610,7 @@ export default function DailyJobBoard() {
           deliveryTypes={deliveryTypes}
         />
       </div>
-      </PullToRefresh>
+      </PullToRefreshIndicator>
     );
   }
 

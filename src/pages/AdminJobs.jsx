@@ -11,8 +11,8 @@ import JobDetailsDialog from '../components/scheduling/JobDetailsDialog';
 import { base44 } from '@/api/base44Client';
 import GlobalSearchBar from '../components/search/GlobalSearchBar';
 import AdvancedFilters from '../components/search/AdvancedFilters';
-import PullToRefresh from 'react-pull-to-refresh';
 import { motion } from 'framer-motion';
+import PullToRefreshIndicator from '../components/scheduling/PullToRefreshIndicator';
 
 export default function AdminJobsPage() {
   const [jobs, setJobs] = useState([]);
@@ -621,30 +621,9 @@ export default function AdminJobsPage() {
   return (
     <>
       {isMobile ? (
-        <PullToRefresh
-          onRefresh={handleRefresh}
-          resistance={2}
-          icon={
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="flex items-center justify-center"
-            >
-              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full" />
-            </motion.div>
-          }
-          loading={
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="flex items-center justify-center py-4"
-            >
-              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full" />
-            </motion.div>
-          }
-        >
+        <PullToRefreshIndicator onRefresh={handleRefresh}>
           {pageContent}
-        </PullToRefresh>
+        </PullToRefreshIndicator>
       ) : (
         pageContent
       )}
