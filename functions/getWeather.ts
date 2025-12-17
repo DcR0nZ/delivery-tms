@@ -1,57 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-// Mapping WillyWeather codes to WMO codes (approximate)
-// WMO Codes:
-// 0: Clear sky, 1: Mainly clear, 2: Partly cloudy, 3: Overcast
-// 45, 48: Fog
-// 51, 53, 55: Drizzle
-// 61, 63, 65: Rain
-// 71, 73, 75: Snow
-// 80, 81, 82: Rain showers
-// 95, 96, 99: Thunderstorm
-const mapWillyWeatherCodeToWMO = (wwCode) => {
-    // WillyWeather codes (inferred/common knowledge):
-    // 1: Fine/Sunny -> 0 (Clear)
-    // 2: Mostly Fine -> 1 (Mainly clear)
-    // 3: Partly Cloudy -> 2 (Partly cloudy)
-    // 4: Cloudy -> 3 (Overcast)
-    // 6: Dust/Haze -> 0 (Unknown, map to clear?) or maybe 45 (Fog-ish)
-    // 7: Fog -> 45
-    // 8: Showers -> 80
-    // 9: Rain -> 61
-    // 10: Storm -> 95
-    // 11: Snow -> 71
-    // 12: Windy -> 0 (Clear but windy?)
-    // 13: Light Rain -> 51
-    // 14: Heavy Rain -> 65
-    // 15: Light Snow -> 71
-    // 16: Heavy Snow -> 75
-    // 17: Light Showers -> 80
-    // 18: Heavy Showers -> 82
-
-    const mapping = {
-        1: 0,   // Fine
-        2: 1,   // Mostly Fine
-        3: 2,   // Partly Cloudy
-        4: 3,   // Cloudy
-        6: 45,  // Haze (Fog)
-        7: 45,  // Fog
-        8: 81,  // Showers
-        9: 63,  // Rain
-        10: 95, // Storm
-        11: 73, // Snow
-        12: 0,  // Windy (Clear)
-        13: 51, // Light Rain
-        14: 65, // Heavy Rain
-        15: 71, // Light Snow
-        16: 75, // Heavy Snow
-        17: 80, // Light Showers
-        18: 82  // Heavy Showers
-    };
-
-    return mapping[wwCode] || 0;
-};
-
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -66,119 +14,152 @@ Deno.serve(async (req) => {
 
         const apiKey = Deno.env.get("WILLY_WEATHER_API_KEY");
         if (!apiKey) {
-            throw new Error("WILLY_WEATHER_API_KEY is not set");
+            throw new Error("Missing WillyWeather API Key");
         }
-        console.log(`Using API Key: ${apiKey.substring(0, 5)}... (Length: ${apiKey.length})`);
 
         // Brisbane coordinates
         const lat = -27.4698;
         const lon = 153.0251;
 
-        // 1. Search for closest location
-        const searchUrl = `https://api.willyweather.com.au/v2/${apiKey}/search/closest.json?lat=${lat}&lng=${lon}`;
+        // 1. Get Location ID
+        const searchUrl = `https://api.willyweather.com.au/v2/${apiKey}/search/closest/${lat},${lon}`;
         const searchRes = await fetch(searchUrl);
-        if (!searchRes.ok) throw new Error(`Search failed: ${searchRes.statusText}`);
+        if (!searchRes.ok) throw new Error(`WillyWeather Search Failed: ${searchRes.statusText}`);
         const searchData = await searchRes.json();
         
-        if (!searchData.location || !searchData.location.id) {
-            console.error("Search response:", searchData);
-            throw new Error("Could not find location");
-        }
+        const locationId = searchData.location?.id;
+        if (!locationId) throw new Error("Location not found");
 
-        const locationId = searchData.location.id;
-
-        // 2. Fetch weather data
-        // Forecasts: weather (current), temperature, rainfall, wind, humidity, precis (hourly-ish)
-        const weatherUrl = `https://api.willyweather.com.au/v2/${apiKey}/locations/${locationId}/weather.json?forecasts=weather,temperature,rainfall,wind,humidity,precis&days=1`;
+        // 2. Fetch Weather Data
+        // requesting forecasts: weather, rainfall, wind, precis, temperature
+        // We'll ask for 2 days to cover "hourly" (though WillyWeather usually gives 3-hourly or specific intervals)
+        const weatherUrl = `https://api.willyweather.com.au/v2/${apiKey}/locations/${locationId}/weather.json?forecasts=weather,rainfall,wind,precis,temperature&days=2`;
         const weatherRes = await fetch(weatherUrl);
-        if (!weatherRes.ok) throw new Error(`Weather fetch failed: ${weatherRes.statusText}`);
+        if (!weatherRes.ok) throw new Error(`WillyWeather Data Failed: ${weatherRes.statusText}`);
         const weatherData = await weatherRes.json();
 
-        // 3. Transform Data
-        // WillyWeather structure is a bit nested by forecast type
-        const forecasts = weatherData.forecasts || {};
-        
-        // Helper to find closest forecast to now
-        const now = new Date();
-        
-        // Current Weather (often in 'weather' -> days[0] -> entries[0])
-        // Note: 'weather' forecast type usually gives daily summary, not current.
-        // Actually, WillyWeather doesn't have a specific "current conditions" endpoint in the same way OpenMeteo does.
-        // It provides "observational" data if we ask for it? 
-        // Docs say: "observational" is a forecast type? No.
-        // Let's assume we use the closest hourly/precis entry or the first 'weather' entry.
-        // Wait, 'weather' forecast gives daily summaries. 'precis' gives 3-hourly textual.
-        // 'temperature', 'wind', 'humidity' give hourly/3-hourly data points.
-        
-        // Let's look for hourly data. 
-        // Usually temperature/wind/humidity/rainfall have entries with timestamps.
-        
-        const temps = forecasts.temperature?.days?.[0]?.entries || [];
-        const winds = forecasts.wind?.days?.[0]?.entries || [];
-        const humidity = forecasts.humidity?.days?.[0]?.entries || [];
-        const rainfall = forecasts.rainfall?.days?.[0]?.entries || [];
-        const precis = forecasts.precis?.days?.[0]?.entries || []; // Textual description
-        const weather = forecasts.weather?.days?.[0]?.entries?.[0] || {}; // Daily summary
+        // 3. Process Data
+        // We need to map this to the format expected by the frontend:
+        // temp, feels_like, description, code, humidity, wind_speed, wind_direction, rain_amount, precipitation
+        // hourly: [{ time, temp, humidity, rain_prob, rain_amount, wind_speed, description, code }]
 
-        // Helper to merge data by time
-        // We'll create hourly slots for the next 12 hours from "now"
-        // WillyWeather might provide data every 3 hours or 1 hour.
-        
-        // Find current values (closest to now)
+        const forecasts = weatherData.forecasts || {};
+        const temperatureForecasts = forecasts.temperature?.days?.[0]?.entries || [];
+        const rainfallForecasts = forecasts.rainfall?.days?.[0]?.entries || [];
+        const windForecasts = forecasts.wind?.days?.[0]?.entries || [];
+        const precisForecasts = forecasts.precis?.days?.[0]?.entries || [];
+        const weatherForecasts = forecasts.weather?.days?.[0]?.entries || [];
+
+        // Helper to find closest entry to now
+        const now = new Date();
         const findClosest = (entries) => {
             if (!entries || entries.length === 0) return null;
-            // Sort by difference from now
             return entries.reduce((prev, curr) => {
-                const prevDiff = Math.abs(new Date(curr.dateTime).getTime() - now.getTime());
-                const currDiff = Math.abs(new Date(prev.dateTime).getTime() - now.getTime());
-                return prevDiff < currDiff ? curr : prev;
+                const prevDiff = Math.abs(new Date(prev.dateTime).getTime() - now.getTime());
+                const currDiff = Math.abs(new Date(curr.dateTime).getTime() - now.getTime());
+                return currDiff < prevDiff ? curr : prev;
             });
         };
 
-        const currentTemp = findClosest(temps)?.t || 0;
-        const currentWind = findClosest(winds)?.speed || 0;
-        const currentWindDir = findClosest(winds)?.direction || 0;
-        const currentHum = findClosest(humidity)?.h || 0;
-        const currentRain = findClosest(rainfall)?.amount || 0;
-        const currentRainProb = findClosest(rainfall)?.probability || 0;
-        const currentPrecis = findClosest(precis)?.precis || weather.precis || "Unknown";
-        const currentCode = weather.code || 0; // Daily code, might be best approximation for current if no hourly code
+        const currentTempEntry = findClosest(temperatureForecasts);
+        const currentRainEntry = findClosest(rainfallForecasts);
+        const currentWindEntry = findClosest(windForecasts);
+        const currentPrecisEntry = findClosest(precisForecasts);
+        const currentWeatherEntry = findClosest(weatherForecasts);
 
-        // Construct hourly forecast
-        // We will align everything to the 'temperature' entries which are usually regular
-        const next12Hours = temps.filter(t => new Date(t.dateTime) > now).slice(0, 12);
+        const currentTemp = currentTempEntry?.t || 0;
+        const currentPrecis = currentPrecisEntry?.precis || "Unknown";
+        const currentCode = currentWeatherEntry?.code || 0;
+        const currentWind = currentWindEntry?.speed || 0; // km/h usually
+        const currentWindDir = currentWindEntry?.direction || 0;
+        const currentRain = currentRainEntry?.amount || 0;
+        const currentRainProb = currentRainEntry?.probability || 0;
+        // WillyWeather might not give humidity in standard hourly feeds easily without 'humidity' forecast which requires 'weather' often covers it?
+        // Let's assume humidity is missing or check if we can get it. For now, 0 or mock if unavailable.
+        // Actually, let's assume we can't easily get current humidity without specific observation data.
+        // Observation data endpoint: /locations/{id}/observational.json?observational=true
+        // But for forecast we use what we have.
         
-        const hourlyForecast = next12Hours.map(tEntry => {
-            const time = tEntry.dateTime;
+        // Try to get observational data for "Current" state
+        let currentHum = 0;
+        try {
+            const obsUrl = `https://api.willyweather.com.au/v2/${apiKey}/locations/${locationId}/weather.json?observational=true`;
+            const obsRes = await fetch(obsUrl);
+            if (obsRes.ok) {
+                const obsData = await obsRes.json();
+                const obs = obsData.observational?.observations?.term?.temperature; // Structure varies
+                // Let's look for humidity in observations if available
+                // Usually observational data has: { temperature: { ... }, humidity: { ... } }
+                if (obsData.observational?.observations?.term?.humidity) {
+                     currentHum = obsData.observational.observations.term.humidity.v;
+                }
+            }
+        } catch (e) {
+            // ignore observation fetch error
+        }
+
+        // Map Hourly
+        // We will combine entries by matching timestamps roughly or just taking temperature entries and finding matching others
+        // WillyWeather entries might not align perfectly.
+        const hourly = [];
+        
+        // Combine next 12 hours from temperature entries
+        const futureTemps = temperatureForecasts
+            .filter(e => new Date(e.dateTime) > now)
+            .slice(0, 12);
+
+        // Also look at day 2 if needed
+        if (futureTemps.length < 12 && forecasts.temperature?.days?.[1]?.entries) {
+            futureTemps.push(...forecasts.temperature.days[1].entries);
+        }
+
+        const mappedHourly = futureTemps.slice(0, 12).map(tempEntry => {
+            const time = tempEntry.dateTime;
             const tDate = new Date(time);
             
-            // Find matching entries for other types
-            const match = (entries) => entries?.find(e => new Date(e.dateTime).getTime() === tDate.getTime());
-            
-            const wEntry = match(winds);
-            const hEntry = match(humidity);
-            const rEntry = match(rainfall);
-            const pEntry = match(precis); // Precis might be 3-hourly, so might not match exactly. 
-            // If precis doesn't match exactly, find the most recent one before this time
-            const pEntryFallback = precis?.slice().reverse().find(e => new Date(e.dateTime) <= tDate);
+            // Find matching entries
+            const findMatch = (entries) => entries?.find(e => Math.abs(new Date(e.dateTime).getTime() - tDate.getTime()) < 3600000); // within 1 hour
+
+            const rain = findMatch(rainfallForecasts) || findMatch(forecasts.rainfall?.days?.[1]?.entries);
+            const wind = findMatch(windForecasts) || findMatch(forecasts.wind?.days?.[1]?.entries);
+            const weather = findMatch(weatherForecasts) || findMatch(forecasts.weather?.days?.[1]?.entries);
+            const precis = findMatch(precisForecasts) || findMatch(forecasts.precis?.days?.[1]?.entries);
 
             return {
                 time: time,
-                temp: Math.round(tEntry.t),
-                humidity: hEntry?.h || 0,
-                rain_prob: rEntry?.probability || 0,
-                rain_amount: rEntry?.amount || 0,
-                wind_speed: wEntry?.speed || 0,
-                description: pEntry?.precis || pEntryFallback?.precis || "",
-                code: pEntry?.precisCode || weather.code || 0 // Use precis code if available, else daily
+                temp: Math.round(tempEntry.t),
+                humidity: 0, // Not available in forecast usually
+                rain_prob: rain?.probability || 0,
+                rain_amount: rain?.amount || 0,
+                wind_speed: wind?.speed || 0,
+                description: precis?.precis || "",
+                code: mapWillyWeatherCodeToWMO(weather?.code || 0)
             };
         });
 
-        // Map codes
-        const mappedHourly = hourlyForecast.map(h => ({
-            ...h,
-            code: mapWillyWeatherCodeToWMO(h.code)
-        }));
+        // Map Code Helper
+        function mapWillyWeatherCodeToWMO(wwCode) {
+            // Basic mapping
+            // 1: Fine -> 0
+            // 2: Mostly Fine -> 1
+            // 3: High Cloud -> 2
+            // 4: Partly Cloudy -> 2
+            // 6: Cloudy -> 3
+            // 8: Overcast -> 3
+            // 11: Shower -> 80
+            // 12: Showers -> 81
+            // 16: Storm -> 95
+            if ([1].includes(wwCode)) return 0;
+            if ([2].includes(wwCode)) return 1;
+            if ([3, 4].includes(wwCode)) return 2;
+            if ([6, 7, 8].includes(wwCode)) return 3;
+            if ([9, 10, 13].includes(wwCode)) return 45; // Fog/Haze
+            if ([11].includes(wwCode)) return 80;
+            if ([12].includes(wwCode)) return 81;
+            if ([14, 15].includes(wwCode)) return 61; // Rain
+            if ([16, 17].includes(wwCode)) return 95; // Storm
+            return 2; // Default to partly cloudy
+        }
 
         const currentData = {
             temp: Math.round(currentTemp),
