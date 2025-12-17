@@ -189,13 +189,13 @@ Deno.serve(async (req) => {
             wind_direction: currentWindDir,
             rain_amount: currentRain,
             precipitation: currentRainProb,
-            hourly: mappedHourly
+            hourly: mappedHourly,
+            provider: "WillyWeather"
         };
 
         return Response.json({ 
             success: true,
-            data: currentData,
-            // debug: { searchData, weatherData } // Remove in prod
+            data: currentData
         });
 
     } catch (error) {
