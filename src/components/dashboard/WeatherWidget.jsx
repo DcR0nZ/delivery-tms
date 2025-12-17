@@ -54,10 +54,10 @@ export default function WeatherWidget() {
 
   return (
     <Card className="bg-gradient-to-br from-blue-500 to-blue-700 h-full overflow-hidden relative">
-      <CardContent className="p-0 h-full flex">
+      <CardContent className="p-0 h-full flex flex-col-reverse sm:flex-row">
         
-        {/* Left Side: Hourly Forecast List */}
-        <div className="w-[45%] bg-black/10 backdrop-blur-sm border-r border-white/10 h-full">
+        {/* Left Side (Bottom on mobile): Hourly Forecast List */}
+        <div className="w-full sm:w-[45%] h-1/2 sm:h-full bg-black/10 backdrop-blur-sm border-t sm:border-t-0 sm:border-r border-white/10">
           {weather && weather.hourly ? (
             <ScrollArea className="h-full w-full">
               <div className="flex flex-col">
@@ -110,8 +110,8 @@ export default function WeatherWidget() {
           )}
         </div>
 
-        {/* Right Side: Current Weather */}
-        <div className="flex-1 p-4 flex flex-col justify-center relative">
+        {/* Right Side (Top on mobile): Current Weather */}
+        <div className="w-full sm:flex-1 h-1/2 sm:h-full p-4 flex flex-col justify-center relative">
           <div className="text-white">
             <h3 className="text-sm font-medium opacity-90 mb-2">Brisbane Now</h3>
             {weather ? (
