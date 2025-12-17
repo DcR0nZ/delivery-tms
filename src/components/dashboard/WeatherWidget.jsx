@@ -58,7 +58,11 @@ export default function WeatherWidget() {
         
         {/* Left Side (Bottom on mobile): Hourly Forecast List */}
         <div className="w-full sm:w-[45%] h-1/2 sm:h-full bg-black/10 backdrop-blur-sm border-t sm:border-t-0 sm:border-r border-white/10">
-          {weather && weather.hourly ? (
+          {weatherError ? (
+            <div className="h-full flex items-center justify-center text-white/70 text-xs p-4 text-center">
+              {weatherError}
+            </div>
+          ) : weather && weather.hourly ? (
             <ScrollArea className="h-full w-full">
               <div className="flex flex-col">
                 {/* Optional Header Row */}
