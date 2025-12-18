@@ -25,6 +25,7 @@ import GlobalSearchBar from '../components/search/GlobalSearchBar';
 import AdvancedFilters from '../components/search/AdvancedFilters';
 import RouteOptimizer from '../components/scheduling/RouteOptimizer';
 import { TrendingUp } from 'lucide-react';
+import PullToRefresh from 'react-pull-to-refresh';
 import { motion } from 'framer-motion';
 import PhysicsJobList from '../components/scheduling/PhysicsJobList';
 import GestureJobCard from '../components/scheduling/GestureJobCard';
@@ -497,7 +498,29 @@ export default function SchedulingBoard() {
   if (isMobile) {
     return (
       <>
-        <PullToRefreshIndicator onRefresh={handleRefresh}>
+        <PullToRefresh
+          onRefresh={handleRefresh}
+          resistance={2}
+          icon={
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="flex items-center justify-center"
+            >
+              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full" />
+            </motion.div>
+          }
+          loading={
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="flex items-center justify-center py-4"
+            >
+              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full" />
+            </motion.div>
+          }
+          className="min-h-screen bg-gray-50"
+        >
         <div className="min-h-screen bg-gray-50 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className="bg-white border-b px-4 py-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
@@ -684,7 +707,7 @@ export default function SchedulingBoard() {
           date={selectedDate}
           onCreated={fetchData}
         />
-        </PullToRefreshIndicator>
+        </PullToRefresh>
       </>
     );
   }

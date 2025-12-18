@@ -1,82 +1,98 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import React from 'react';
+import { useSpring, animated } from '@react-spring/web';
+import { useDrag } from '@use-gesture/react';
+import { RefreshCw } from 'lucide-react';
 
 export default function PullToRefreshIndicator({ onRefresh, children }) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const y = useMotionValue(0);
-  const rotate = useTransform(y, [0, 100], [0, 360]);
-  const opacity = useTransform(y, [0, 50, 80], [0, 0.5, 1]);
-  const startY = useRef(0);
-  const containerRef = useRef(null);
+  const [{ y, rotate, opacity }, api] = useSpring(() => ({
+    y: 0,
+    rotate: 0,
+    opacity: 0,
+    config: { tension: 300, friction: 30 }
+  }));
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-    const handleTouchStart = (e) => {
-      if (window.scrollY <= 5) {
-        startY.current = e.touches[0].clientY;
-      }
-    };
+  const bind = useDrag(
+    async ({ down, movement: [, my], velocity: [, vy], direction: [, dy] }) => {
+      // Only allow pull down at the top of the page
+      if (window.scrollY > 0) return;
 
-    const handleTouchMove = (e) => {
-      if (startY.current > 0 && window.scrollY <= 5) {
-        const currentY = e.touches[0].clientY;
-        const diff = currentY - startY.current;
-        if (diff > 0) {
-          y.set(Math.min(diff * 0.4, 150)); // Add resistance
-        }
-      }
-    };
+      const pullDistance = Math.max(0, my);
+      const threshold = 80;
 
-    const handleTouchEnd = async () => {
-      if (startY.current > 0) {
-        const finalY = y.get();
-        if (finalY > 80 && !isRefreshing) {
+      if (down && dy > 0) {
+        // User is pulling down
+        api.start({
+          y: Math.min(pullDistance, threshold * 1.5),
+          rotate: (pullDistance / threshold) * 360,
+          opacity: Math.min(pullDistance / threshold, 1),
+          immediate: true
+        });
+      } else {
+        // User released
+        if (pullDistance > threshold && !isRefreshing) {
+          // Trigger refresh
           setIsRefreshing(true);
-          animate(y, 80); // Snap to loading
-          if (onRefresh) await onRefresh();
-          setIsRefreshing(false);
-          animate(y, 0);
+          api.start({
+            y: threshold,
+            rotate: 360,
+            opacity: 1
+          });
+
+          await onRefresh?.();
+
+          // Reset after refresh
+          setTimeout(() => {
+            api.start({
+              y: 0,
+              rotate: 0,
+              opacity: 0
+            });
+            setIsRefreshing(false);
+          }, 500);
         } else {
-          animate(y, 0);
+          // Reset without refresh
+          api.start({
+            y: 0,
+            rotate: 0,
+            opacity: 0,
+            config: { 
+              tension: 200, 
+              friction: 25,
+              velocity: [0, -vy * 0.5]
+            }
+          });
         }
-        startY.current = 0;
       }
-    };
-
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: true });
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isRefreshing, onRefresh, y]);
+    },
+    {
+      axis: 'y',
+      filterTaps: true,
+      bounds: { top: 0 },
+      rubberband: true
+    }
+  );
 
   return (
-    <div ref={containerRef} className="relative min-h-screen">
-      <motion.div
-        style={{ y, opacity, pointerEvents: 'none' }}
-        className="fixed top-20 left-0 right-0 flex justify-center z-50"
+    <div className="relative" {...bind()} style={{ touchAction: 'pan-y' }}>
+      <animated.div
+        style={{
+          y,
+          opacity,
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 50
+        }}
+        className="bg-white rounded-full p-3 shadow-lg"
       >
-        <motion.div 
-          style={{ rotate }}
-          className="bg-white rounded-full p-2 shadow-lg border"
-        >
-          {isRefreshing ? (
-            <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-          ) : (
-            <Loader2 className="w-6 h-6 text-blue-600" />
-          )}
-        </motion.div>
-      </motion.div>
-      <motion.div style={{ y }}>
-        {children}
-      </motion.div>
+        <animated.div style={{ rotate }}>
+          <RefreshCw className="h-6 w-6 text-blue-600" />
+        </animated.div>
+      </animated.div>
+      {children}
     </div>
   );
 }
