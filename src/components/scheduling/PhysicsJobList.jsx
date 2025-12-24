@@ -40,7 +40,9 @@ export default function PhysicsJobList({
         }
       });
     },
-    { target: containerRef }
+    { 
+      eventOptions: { passive: false }
+    }
   );
 
   // Update scroll position
