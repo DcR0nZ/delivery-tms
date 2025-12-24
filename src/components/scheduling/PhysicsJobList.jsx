@@ -19,7 +19,12 @@ export default function PhysicsJobList({
   // Momentum scrolling effect
   const [{ scrollY }, api] = useSpring(() => ({ 
     scrollY: 0,
-    config: config.slow
+    config: config.slow,
+    onChange: (result) => {
+      if (containerRef.current) {
+        containerRef.current.scrollTop = result.value.scrollY;
+      }
+    }
   }));
 
   // Wheel gesture for smooth momentum scrolling
@@ -44,15 +49,6 @@ export default function PhysicsJobList({
       eventOptions: { passive: false }
     }
   );
-
-  // Update scroll position
-  useEffect(() => {
-    return scrollY.onChange(latest => {
-      if (containerRef.current) {
-        containerRef.current.scrollTop = latest;
-      }
-    });
-  }, [scrollY]);
 
   if (jobs.length === 0) {
     return (
